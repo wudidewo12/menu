@@ -1,0 +1,1670 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-19T03:16:58.588Z",
+  "settings": {
+    "title": "灶台菜单",
+    "subtitle": "今晚想吃什么，自己点 · 共 55 道家常菜",
+    "sections": [
+      {
+        "id": "recommend",
+        "label": "推荐",
+        "title": "今晚推荐",
+        "note": "掌勺的拿手菜，先点不踩雷",
+        "category": null,
+        "recommendedOnly": true,
+        "dishIds": [
+          1,
+          5,
+          6,
+          7,
+          13,
+          24,
+          25,
+          35,
+          47
+        ],
+        "sortOrder": 1
+      },
+      {
+        "id": "cold",
+        "label": "凉菜",
+        "title": "凉菜",
+        "note": "开场先垫一口",
+        "category": "凉菜",
+        "recommendedOnly": false,
+        "dishIds": [
+          29,
+          39
+        ],
+        "sortOrder": 2
+      },
+      {
+        "id": "seafood",
+        "label": "海鲜",
+        "title": "海鲜河鲜",
+        "note": "鲜味担当",
+        "category": "海鲜",
+        "recommendedOnly": false,
+        "dishIds": [
+          2,
+          3,
+          6,
+          14,
+          36,
+          54
+        ],
+        "sortOrder": 3
+      },
+      {
+        "id": "meat",
+        "label": "肉菜",
+        "title": "肉菜",
+        "note": "硬菜撑场面",
+        "category": "肉菜",
+        "recommendedOnly": false,
+        "dishIds": [
+          1,
+          4,
+          5,
+          7,
+          8,
+          9,
+          10,
+          13,
+          16,
+          22,
+          24,
+          25,
+          27,
+          28,
+          31,
+          42,
+          43,
+          47,
+          49,
+          51,
+          52,
+          55
+        ],
+        "sortOrder": 4
+      },
+      {
+        "id": "veggie",
+        "label": "素菜",
+        "title": "素菜时蔬",
+        "note": "解腻清口",
+        "category": "素菜",
+        "recommendedOnly": false,
+        "dishIds": [
+          12,
+          15,
+          20,
+          26,
+          30,
+          33,
+          34,
+          38,
+          40,
+          45,
+          46,
+          48,
+          50
+        ],
+        "sortOrder": 5
+      },
+      {
+        "id": "staple",
+        "label": "主食",
+        "title": "主食",
+        "note": "压轴管饱",
+        "category": "主食",
+        "recommendedOnly": false,
+        "dishIds": [
+          17,
+          18,
+          19,
+          23,
+          32,
+          37
+        ],
+        "sortOrder": 6
+      },
+      {
+        "id": "soup",
+        "label": "汤甜",
+        "title": "汤羹甜品",
+        "note": "收尾暖胃",
+        "category": "汤甜",
+        "recommendedOnly": false,
+        "dishIds": [
+          11,
+          21,
+          35,
+          41,
+          44,
+          53
+        ],
+        "sortOrder": 7
+      }
+    ]
+  },
+  "dishes": [
+    {
+      "id": 1,
+      "name": "红烧排骨",
+      "slug": "hong-shao-pai-gu",
+      "description": "精选猪肋排，红烧入味，肉质酥烂，色泽红亮。",
+      "date": "今晚菜单",
+      "prepTime": "45分钟",
+      "category": "肉菜",
+      "accent": "酱香",
+      "difficulty": "中等",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/1.webp",
+      "images": [
+        "/images/dishes/1.webp"
+      ],
+      "ingredients": [
+        "猪肋排 (500g)",
+        "生抽",
+        "老抽",
+        "冰糖",
+        "料酒",
+        "葱",
+        "姜",
+        "八角"
+      ],
+      "visible": true,
+      "sortOrder": 1
+    },
+    {
+      "id": 2,
+      "name": "清蒸鲈鱼",
+      "slug": "qing-zheng-lu-yu",
+      "description": "新鲜鲈鱼清蒸出锅，肉质鲜嫩，适合留给不想吃重口的人。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "海鲜",
+      "accent": "鲜甜",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/2.webp",
+      "images": [
+        "/images/dishes/2.webp"
+      ],
+      "ingredients": [
+        "鲈鱼 (1条)",
+        "葱丝",
+        "姜丝",
+        "蒸鱼豉油",
+        "料酒",
+        "热油"
+      ],
+      "visible": true,
+      "sortOrder": 2
+    },
+    {
+      "id": 3,
+      "name": "粉丝裹虾",
+      "slug": "fen-si-guo-xia",
+      "description": "细米粉铺底吸汁，炒虾仁配彩椒和葱花，清爽但不寡淡。",
+      "date": "今晚菜单",
+      "prepTime": "35分钟",
+      "category": "海鲜",
+      "accent": "鲜香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/3.webp",
+      "images": [
+        "/images/dishes/3.webp"
+      ],
+      "ingredients": [
+        "虾仁",
+        "细米粉",
+        "红黄彩椒",
+        "葱花",
+        "蒜",
+        "生抽",
+        "蚝油"
+      ],
+      "visible": true,
+      "sortOrder": 3
+    },
+    {
+      "id": 4,
+      "name": "小炒黄牛肉",
+      "slug": "xiao-chao-huang-niu-rou",
+      "description": "黄牛肉快炒出镬气，青椒提香，吃起来利落下饭。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "肉菜",
+      "accent": "镬气",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/4.webp",
+      "images": [
+        "/images/dishes/4.webp"
+      ],
+      "ingredients": [
+        "黄牛肉",
+        "青椒",
+        "洋葱",
+        "蒜",
+        "生抽",
+        "料酒",
+        "生粉"
+      ],
+      "visible": true,
+      "sortOrder": 4
+    },
+    {
+      "id": 5,
+      "name": "孜然羊肉",
+      "slug": "zi-ran-yang-rou",
+      "description": "羊肉配孜然和洋葱，香气很直接，适合重口味局。",
+      "date": "今晚菜单",
+      "prepTime": "40分钟",
+      "category": "肉菜",
+      "accent": "辛香",
+      "difficulty": "中等",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/5.webp",
+      "images": [
+        "/images/dishes/5.webp"
+      ],
+      "ingredients": [
+        "羊肉",
+        "孜然粉",
+        "洋葱",
+        "辣椒粉",
+        "料酒",
+        "生抽",
+        "香菜"
+      ],
+      "visible": true,
+      "sortOrder": 5
+    },
+    {
+      "id": 6,
+      "name": "油焖大虾",
+      "slug": "yu-men-da-xia",
+      "description": "大虾油焖到红亮入味，虾壳带汁，适合当海鲜硬菜。",
+      "date": "今晚菜单",
+      "prepTime": "35分钟",
+      "category": "海鲜",
+      "accent": "油焖",
+      "difficulty": "中等",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/6.webp",
+      "images": [
+        "/images/dishes/6.webp"
+      ],
+      "ingredients": [
+        "大虾",
+        "葱",
+        "姜",
+        "蒜",
+        "料酒",
+        "生抽",
+        "白糖"
+      ],
+      "visible": true,
+      "sortOrder": 6
+    },
+    {
+      "id": 7,
+      "name": "番茄牛腩",
+      "slug": "fan-qie-niu-nan",
+      "description": "牛腩炖到软烂，番茄出酸甜汤底，浓郁稳定好吃。",
+      "date": "今晚菜单",
+      "prepTime": "50分钟",
+      "category": "肉菜",
+      "accent": "酸甜",
+      "difficulty": "简单",
+      "recommended": true,
+      "servings": "3-4人份",
+      "image": "/images/dishes/7.webp",
+      "images": [
+        "/images/dishes/7.webp"
+      ],
+      "ingredients": [
+        "牛腩",
+        "番茄",
+        "洋葱",
+        "番茄酱",
+        "生抽",
+        "料酒",
+        "冰糖",
+        "八角"
+      ],
+      "visible": true,
+      "sortOrder": 7
+    },
+    {
+      "id": 8,
+      "name": "咖喱肥牛",
+      "slug": "ga-li-fei-niu",
+      "description": "肥牛配香浓咖喱，汤汁适合拌饭，速度也不慢。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "肉菜",
+      "accent": "香浓",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/8.webp",
+      "images": [
+        "/images/dishes/8.webp"
+      ],
+      "ingredients": [
+        "肥牛片",
+        "咖喱块",
+        "洋葱",
+        "胡萝卜",
+        "土豆",
+        "椰浆"
+      ],
+      "visible": true,
+      "sortOrder": 8
+    },
+    {
+      "id": 9,
+      "name": "青椒肉丝",
+      "slug": "qing-jiao-rou-si",
+      "description": "标准家常下饭菜，速度快，稳定，不抢主菜风头。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "肉菜",
+      "accent": "爽口",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/9.webp",
+      "images": [
+        "/images/dishes/9.webp"
+      ],
+      "ingredients": [
+        "猪肉丝",
+        "青椒",
+        "豆干",
+        "蒜",
+        "生抽",
+        "料酒",
+        "生粉"
+      ],
+      "visible": true,
+      "sortOrder": 9
+    },
+    {
+      "id": 10,
+      "name": "临沂炒鸡",
+      "slug": "lin-yi-chao-ji",
+      "description": "鸡块大火炒香，辣味足，适合人多时当主菜。",
+      "date": "今晚菜单",
+      "prepTime": "40分钟",
+      "category": "肉菜",
+      "accent": "香辣",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "3-4人份",
+      "image": "/images/dishes/10.webp",
+      "images": [
+        "/images/dishes/10.webp"
+      ],
+      "ingredients": [
+        "鸡肉",
+        "干辣椒",
+        "花椒",
+        "葱",
+        "姜",
+        "蒜",
+        "生抽",
+        "料酒"
+      ],
+      "visible": true,
+      "sortOrder": 10
+    },
+    {
+      "id": 11,
+      "name": "虾仁海带蛋花汤",
+      "slug": "xia-ren-hai-dai-dan-hua-tang",
+      "description": "虾仁、海带和蛋花做清汤，轻一点，适合给一桌重菜收口。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "汤甜",
+      "accent": "清鲜",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/11.webp",
+      "images": [
+        "/images/dishes/11.webp"
+      ],
+      "ingredients": [
+        "虾仁",
+        "海带",
+        "鸡蛋",
+        "葱花",
+        "盐",
+        "白胡椒粉"
+      ],
+      "visible": true,
+      "sortOrder": 11
+    },
+    {
+      "id": 12,
+      "name": "麻婆豆腐",
+      "slug": "ma-po-dou-fu",
+      "description": "豆腐软嫩，麻辣味足，拌饭能力很强。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "素菜",
+      "accent": "麻辣",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/12.webp",
+      "images": [
+        "/images/dishes/12.webp"
+      ],
+      "ingredients": [
+        "嫩豆腐",
+        "牛肉末",
+        "豆瓣酱",
+        "花椒粉",
+        "蒜",
+        "葱花",
+        "水淀粉"
+      ],
+      "visible": true,
+      "sortOrder": 12
+    },
+    {
+      "id": 13,
+      "name": "红烧肉",
+      "slug": "hong-shao-rou",
+      "description": "五花肉红烧到软糯，香甜浓厚，桌上有它就很撑场面。",
+      "date": "今晚菜单",
+      "prepTime": "60分钟",
+      "category": "肉菜",
+      "accent": "软糯",
+      "difficulty": "中等",
+      "recommended": true,
+      "servings": "3-4人份",
+      "image": "/images/dishes/13.webp",
+      "images": [
+        "/images/dishes/13.webp"
+      ],
+      "ingredients": [
+        "五花肉",
+        "冰糖",
+        "生抽",
+        "老抽",
+        "料酒",
+        "葱",
+        "姜",
+        "八角"
+      ],
+      "visible": true,
+      "sortOrder": 13
+    },
+    {
+      "id": 14,
+      "name": "红烧鱼",
+      "slug": "hong-shao-yu",
+      "description": "鱼煎后红烧，酱汁挂得住，鲜香但比清蒸更重口。",
+      "date": "今晚菜单",
+      "prepTime": "40分钟",
+      "category": "海鲜",
+      "accent": "酱香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/14.webp",
+      "images": [
+        "/images/dishes/14.webp"
+      ],
+      "ingredients": [
+        "鲜鱼",
+        "葱",
+        "姜",
+        "蒜",
+        "生抽",
+        "老抽",
+        "料酒",
+        "白糖"
+      ],
+      "visible": true,
+      "sortOrder": 14
+    },
+    {
+      "id": 15,
+      "name": "风味茄子",
+      "slug": "feng-wei-qie-zi",
+      "description": "茄子炸到外酥内软，咸香微甜，适合当抢手素菜。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "素菜",
+      "accent": "酥香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/15.webp",
+      "images": [
+        "/images/dishes/15.webp"
+      ],
+      "ingredients": [
+        "长茄子",
+        "干辣椒",
+        "花椒",
+        "蒜",
+        "香菜",
+        "生抽",
+        "白糖",
+        "淀粉"
+      ],
+      "visible": true,
+      "sortOrder": 15
+    },
+    {
+      "id": 16,
+      "name": "糖醋里脊",
+      "slug": "tang-cu-li-ji",
+      "description": "里脊外酥里嫩，糖醋汁酸甜明亮，属于需要认真炸的菜。",
+      "date": "今晚菜单",
+      "prepTime": "35分钟",
+      "category": "肉菜",
+      "accent": "酸甜",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/16.webp",
+      "images": [
+        "/images/dishes/16.webp"
+      ],
+      "ingredients": [
+        "猪里脊",
+        "鸡蛋",
+        "淀粉",
+        "番茄酱",
+        "白糖",
+        "米醋",
+        "白芝麻"
+      ],
+      "visible": true,
+      "sortOrder": 16
+    },
+    {
+      "id": 17,
+      "name": "炒饼丝",
+      "slug": "chao-bing-si",
+      "description": "饼丝和配菜一起快炒，主食属性强，适合想吃碳水的人。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "主食",
+      "accent": "镬气",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/17.webp",
+      "images": [
+        "/images/dishes/17.webp"
+      ],
+      "ingredients": [
+        "饼丝",
+        "圆白菜",
+        "胡萝卜",
+        "鸡蛋",
+        "蒜",
+        "生抽",
+        "醋"
+      ],
+      "visible": true,
+      "sortOrder": 17
+    },
+    {
+      "id": 18,
+      "name": "炒方便面",
+      "slug": "chao-fang-bian-mian",
+      "description": "方便面快炒，香气粗暴直接，深夜菜单里很有统治力。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "主食",
+      "accent": "香辣",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "1-2人份",
+      "image": "/images/dishes/18.webp",
+      "images": [
+        "/images/dishes/18.webp"
+      ],
+      "ingredients": [
+        "方便面",
+        "鸡蛋",
+        "火腿肠",
+        "青菜",
+        "生抽",
+        "蚝油"
+      ],
+      "visible": true,
+      "sortOrder": 18
+    },
+    {
+      "id": 19,
+      "name": "海鲜炒饭",
+      "slug": "dan-chao-fan",
+      "description": "米饭炒到粒粒分明，虾仁、鱿鱼和豌豆提鲜，适合当主食收尾。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "主食",
+      "accent": "鲜香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "1-2人份",
+      "image": "/images/dishes/19.webp",
+      "images": [
+        "/images/dishes/19.webp"
+      ],
+      "ingredients": [
+        "隔夜米饭",
+        "虾仁",
+        "鱿鱼粒",
+        "鸡蛋",
+        "豌豆",
+        "葱花",
+        "盐"
+      ],
+      "visible": true,
+      "sortOrder": 19
+    },
+    {
+      "id": 20,
+      "name": "肉末茄子",
+      "slug": "rou-mo-qie-zi",
+      "description": "茄子吸满肉末酱汁，下饭程度很高。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "素菜",
+      "accent": "浓香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/20.webp",
+      "images": [
+        "/images/dishes/20.webp"
+      ],
+      "ingredients": [
+        "茄子",
+        "猪肉末",
+        "豆瓣酱",
+        "蒜",
+        "生抽",
+        "蚝油",
+        "水淀粉"
+      ],
+      "visible": true,
+      "sortOrder": 20
+    },
+    {
+      "id": 21,
+      "name": "清汤排骨",
+      "slug": "qing-tang-pai-gu",
+      "description": "排骨炖清汤，味道干净，汤色清亮，适合配重口热菜。",
+      "date": "今晚菜单",
+      "prepTime": "50分钟",
+      "category": "汤甜",
+      "accent": "清润",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "3-4人份",
+      "image": "/images/dishes/21.webp",
+      "images": [
+        "/images/dishes/21.webp"
+      ],
+      "ingredients": [
+        "排骨",
+        "玉米",
+        "胡萝卜",
+        "葱",
+        "姜",
+        "料酒",
+        "盐"
+      ],
+      "visible": true,
+      "sortOrder": 21
+    },
+    {
+      "id": 22,
+      "name": "牛排",
+      "slug": "niu-pai",
+      "description": "牛排煎到合适熟度，配黑胡椒汁，快但需要盯火候。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "肉菜",
+      "accent": "焦香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "1-2人份",
+      "image": "/images/dishes/22.webp",
+      "images": [
+        "/images/dishes/22.webp"
+      ],
+      "ingredients": [
+        "牛排",
+        "黄油",
+        "蒜",
+        "迷迭香",
+        "黑胡椒",
+        "盐"
+      ],
+      "visible": true,
+      "sortOrder": 22
+    },
+    {
+      "id": 23,
+      "name": "番茄肉酱意面",
+      "slug": "fan-qie-rou-jiang-yi-mian",
+      "description": "番茄肉酱慢慢炒出香味，意面吸汁，适合当独立主食。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "主食",
+      "accent": "酸香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/23.webp",
+      "images": [
+        "/images/dishes/23.webp"
+      ],
+      "ingredients": [
+        "意面",
+        "牛肉末",
+        "番茄",
+        "洋葱",
+        "番茄酱",
+        "蒜",
+        "黑胡椒"
+      ],
+      "visible": true,
+      "sortOrder": 23
+    },
+    {
+      "id": 24,
+      "name": "奥尔良烤鸡翅",
+      "slug": "ao-er-liang-kao-ji-chi",
+      "description": "鸡翅提前腌好再烤，香味稳定，是需要等烤箱的菜。",
+      "date": "今晚菜单",
+      "prepTime": "45分钟",
+      "category": "肉菜",
+      "accent": "甜辣",
+      "difficulty": "简单",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/24.webp",
+      "images": [
+        "/images/dishes/24.webp"
+      ],
+      "ingredients": [
+        "鸡翅",
+        "奥尔良腌料",
+        "蜂蜜",
+        "料酒",
+        "白芝麻"
+      ],
+      "visible": true,
+      "sortOrder": 24
+    },
+    {
+      "id": 25,
+      "name": "小白菜炒腊肉",
+      "slug": "xiao-bai-cai-chao-la-rou",
+      "description": "腊肉咸香，小白菜清爽，速度快，适合补一道青菜。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "肉菜",
+      "accent": "咸香",
+      "difficulty": "简单",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/25.webp",
+      "images": [
+        "/images/dishes/25.webp"
+      ],
+      "ingredients": [
+        "小白菜",
+        "腊肉",
+        "蒜",
+        "干辣椒",
+        "生抽"
+      ],
+      "visible": true,
+      "sortOrder": 25
+    },
+    {
+      "id": 26,
+      "name": "包菜鸡蛋炒粉丝",
+      "slug": "bao-cai-ji-dan-chao-fen-si",
+      "description": "包菜、鸡蛋和粉丝一起炒，素一点但很顶饱。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "素菜",
+      "accent": "爽香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/26.webp",
+      "images": [
+        "/images/dishes/26.webp"
+      ],
+      "ingredients": [
+        "包菜",
+        "鸡蛋",
+        "粉丝",
+        "胡萝卜",
+        "蒜",
+        "生抽",
+        "蚝油"
+      ],
+      "visible": true,
+      "sortOrder": 26
+    },
+    {
+      "id": 27,
+      "name": "回锅肉",
+      "slug": "hui-guo-rou",
+      "description": "五花肉回锅炒香，豆瓣酱和蒜苗负责灵魂。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "肉菜",
+      "accent": "酱香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/27.webp",
+      "images": [
+        "/images/dishes/27.webp"
+      ],
+      "ingredients": [
+        "五花肉",
+        "蒜苗",
+        "豆瓣酱",
+        "豆豉",
+        "姜",
+        "料酒"
+      ],
+      "visible": true,
+      "sortOrder": 27
+    },
+    {
+      "id": 28,
+      "name": "宫保鸡丁",
+      "slug": "gong-bao-ji-ding",
+      "description": "鸡丁、花生和干辣椒组成经典酸甜微辣口。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "肉菜",
+      "accent": "糊辣",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/28.webp",
+      "images": [
+        "/images/dishes/28.webp"
+      ],
+      "ingredients": [
+        "鸡腿肉",
+        "花生米",
+        "干辣椒",
+        "葱段",
+        "生抽",
+        "香醋",
+        "白糖"
+      ],
+      "visible": true,
+      "sortOrder": 28
+    },
+    {
+      "id": 29,
+      "name": "皮蛋豆腐",
+      "slug": "pi-dan-dou-fu",
+      "description": "皮蛋和嫩豆腐拌一拌就能上桌，冷菜担当，省时间。",
+      "date": "今晚菜单",
+      "prepTime": "10分钟",
+      "category": "凉菜",
+      "accent": "清爽",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/29.webp",
+      "images": [
+        "/images/dishes/29.webp"
+      ],
+      "ingredients": [
+        "皮蛋",
+        "嫩豆腐",
+        "葱花",
+        "蒜末",
+        "生抽",
+        "香醋",
+        "香油"
+      ],
+      "visible": true,
+      "sortOrder": 29
+    },
+    {
+      "id": 30,
+      "name": "香菇炒上海青",
+      "slug": "xiang-gu-chao-shang-hai-qing",
+      "description": "香菇提鲜，上海青清脆，属于不该被忽略的清口蔬菜。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "鲜绿",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/30.webp",
+      "images": [
+        "/images/dishes/30.webp"
+      ],
+      "ingredients": [
+        "上海青",
+        "香菇",
+        "蒜",
+        "蚝油",
+        "盐"
+      ],
+      "visible": true,
+      "sortOrder": 30
+    },
+    {
+      "id": 31,
+      "name": "猪肉白菜炖粉条",
+      "slug": "zhu-rou-bai-cai-dun-fen-tiao",
+      "description": "白菜、猪肉和粉条一起炖，热乎耐吃，偏慢但很有冬天感。",
+      "date": "今晚菜单",
+      "prepTime": "45分钟",
+      "category": "肉菜",
+      "accent": "热乎",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "3-4人份",
+      "image": "/images/dishes/31.webp",
+      "images": [
+        "/images/dishes/31.webp"
+      ],
+      "ingredients": [
+        "五花肉",
+        "白菜",
+        "粉条",
+        "葱",
+        "姜",
+        "生抽",
+        "老抽"
+      ],
+      "visible": true,
+      "sortOrder": 31
+    },
+    {
+      "id": 32,
+      "name": "红烧排骨焖面",
+      "slug": "hong-shao-pai-gu-men-mian",
+      "description": "排骨和面一起焖，主食硬菜合体，一锅就很有存在感。",
+      "date": "今晚菜单",
+      "prepTime": "50分钟",
+      "category": "主食",
+      "accent": "浓香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "3-4人份",
+      "image": "/images/dishes/32.webp",
+      "images": [
+        "/images/dishes/32.webp"
+      ],
+      "ingredients": [
+        "排骨",
+        "鲜面条",
+        "豆角",
+        "土豆",
+        "生抽",
+        "老抽",
+        "冰糖",
+        "葱姜"
+      ],
+      "visible": true,
+      "sortOrder": 32
+    },
+    {
+      "id": 33,
+      "name": "番茄鸡蛋",
+      "slug": "fan-qie-ji-dan",
+      "description": "番茄炒出汁，鸡蛋嫩一点，永远不会错的家常菜。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "酸甜",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/33.webp",
+      "images": [
+        "/images/dishes/33.webp"
+      ],
+      "ingredients": [
+        "番茄",
+        "鸡蛋",
+        "葱花",
+        "盐",
+        "白糖"
+      ],
+      "visible": true,
+      "sortOrder": 33
+    },
+    {
+      "id": 34,
+      "name": "青椒鸡蛋",
+      "slug": "qing-jiao-ji-dan",
+      "description": "青椒和鸡蛋快炒，香、快、清爽，适合补一道轻口热菜。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "清香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/34.webp",
+      "images": [
+        "/images/dishes/34.webp"
+      ],
+      "ingredients": [
+        "青椒",
+        "鸡蛋",
+        "蒜",
+        "盐",
+        "生抽"
+      ],
+      "visible": true,
+      "sortOrder": 34
+    },
+    {
+      "id": 35,
+      "name": "米酒汤圆",
+      "slug": "mi-jiu-tang-yuan",
+      "description": "米酒配小汤圆和蛋花，甜口收尾，轻松但很有仪式感。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "汤甜",
+      "accent": "甜润",
+      "difficulty": "简单",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/35.webp",
+      "images": [
+        "/images/dishes/35.webp"
+      ],
+      "ingredients": [
+        "米酒",
+        "小汤圆",
+        "鸡蛋",
+        "枸杞",
+        "白糖"
+      ],
+      "visible": true,
+      "sortOrder": 35
+    },
+    {
+      "id": 36,
+      "name": "酸菜鱼",
+      "slug": "suan-cai-yu",
+      "description": "鱼片配酸菜煮出酸辣汤底，开胃下饭，适合当海鲜硬菜。",
+      "date": "今晚菜单",
+      "prepTime": "45分钟",
+      "category": "海鲜",
+      "accent": "酸辣",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "3-4人份",
+      "image": "/images/dishes/36.webp",
+      "images": [
+        "/images/dishes/36.webp"
+      ],
+      "ingredients": [
+        "黑鱼片",
+        "酸菜",
+        "泡椒",
+        "葱",
+        "姜",
+        "蒜",
+        "花椒",
+        "白胡椒粉"
+      ],
+      "visible": true,
+      "sortOrder": 36
+    },
+    {
+      "id": 37,
+      "name": "辣椒炒面",
+      "slug": "la-jiao-chao-mian",
+      "description": "青辣椒碎裹面粉和鸡蛋炒成松散颗粒，不是面条，香辣很直接。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "主食",
+      "accent": "香辣",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/37.webp",
+      "images": [
+        "/images/dishes/37.webp"
+      ],
+      "ingredients": [
+        "青辣椒",
+        "面粉",
+        "鸡蛋",
+        "蒜",
+        "盐",
+        "十三香"
+      ],
+      "visible": true,
+      "sortOrder": 37
+    },
+    {
+      "id": 38,
+      "name": "炒合菜",
+      "slug": "chao-he-cai",
+      "description": "几样蔬菜和粉丝一起炒，口感丰富，适合补一道清爽热菜。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "素菜",
+      "accent": "爽香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/38.webp",
+      "images": [
+        "/images/dishes/38.webp"
+      ],
+      "ingredients": [
+        "韭菜",
+        "豆芽",
+        "粉丝",
+        "胡萝卜",
+        "鸡蛋",
+        "蒜",
+        "生抽"
+      ],
+      "visible": true,
+      "sortOrder": 38
+    },
+    {
+      "id": 39,
+      "name": "拍黄瓜拌变蛋",
+      "slug": "pai-huang-gua-ban-bian-dan",
+      "description": "黄瓜拍散后拌变蛋，凉爽带劲，重菜旁边必须有它。",
+      "date": "今晚菜单",
+      "prepTime": "10分钟",
+      "category": "凉菜",
+      "accent": "清爽",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/39.webp",
+      "images": [
+        "/images/dishes/39.webp"
+      ],
+      "ingredients": [
+        "黄瓜",
+        "变蛋",
+        "蒜末",
+        "生抽",
+        "香醋",
+        "香油",
+        "辣椒油"
+      ],
+      "visible": true,
+      "sortOrder": 39
+    },
+    {
+      "id": 40,
+      "name": "手撕包菜",
+      "slug": "shou-si-bao-cai",
+      "description": "包菜手撕后大火快炒，脆、香、下饭，是很稳的青菜位。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "干香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/40.webp",
+      "images": [
+        "/images/dishes/40.webp"
+      ],
+      "ingredients": [
+        "包菜",
+        "干辣椒",
+        "蒜",
+        "花椒",
+        "生抽",
+        "香醋"
+      ],
+      "visible": true,
+      "sortOrder": 40
+    },
+    {
+      "id": 41,
+      "name": "紫菜蛋花汤",
+      "slug": "zi-cai-dan-hua-tang",
+      "description": "紫菜、鸡蛋和葱花做清汤，轻轻一碗，给整桌菜收住。",
+      "date": "今晚菜单",
+      "prepTime": "10分钟",
+      "category": "汤甜",
+      "accent": "清鲜",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/41.webp",
+      "images": [
+        "/images/dishes/41.webp"
+      ],
+      "ingredients": [
+        "紫菜",
+        "鸡蛋",
+        "葱花",
+        "虾皮",
+        "盐",
+        "白胡椒粉"
+      ],
+      "visible": true,
+      "sortOrder": 41
+    },
+    {
+      "id": 42,
+      "name": "葱爆羊肉",
+      "slug": "cong-bao-yang-rou",
+      "description": "羊肉片和大葱猛火爆炒，香气直接，比孜然羊肉更利落。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "肉菜",
+      "accent": "葱香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/42.webp",
+      "images": [
+        "/images/dishes/42.webp"
+      ],
+      "ingredients": [
+        "羊肉片",
+        "大葱",
+        "姜",
+        "料酒",
+        "生抽",
+        "白胡椒粉"
+      ],
+      "visible": true,
+      "sortOrder": 42
+    },
+    {
+      "id": 43,
+      "name": "京酱肉丝",
+      "slug": "jing-jiang-rou-si",
+      "description": "肉丝裹上甜面酱，配葱丝和豆皮，甜咸口很讨喜。",
+      "date": "今晚菜单",
+      "prepTime": "30分钟",
+      "category": "肉菜",
+      "accent": "酱香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/43.webp",
+      "images": [
+        "/images/dishes/43.webp"
+      ],
+      "ingredients": [
+        "猪里脊",
+        "甜面酱",
+        "葱丝",
+        "豆皮",
+        "料酒",
+        "生抽",
+        "淀粉"
+      ],
+      "visible": true,
+      "sortOrder": 43
+    },
+    {
+      "id": 44,
+      "name": "肉片汤",
+      "slug": "rou-pian-tang",
+      "description": "肉片配胡萝卜、土豆和芹菜煮清汤，汤水干净，适合配炒菜。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "汤甜",
+      "accent": "清润",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/44.webp",
+      "images": [
+        "/images/dishes/44.webp"
+      ],
+      "ingredients": [
+        "猪肉片",
+        "胡萝卜",
+        "土豆",
+        "芹菜",
+        "姜丝",
+        "盐",
+        "白胡椒粉"
+      ],
+      "visible": true,
+      "sortOrder": 44
+    },
+    {
+      "id": 45,
+      "name": "上海青炒豆腐",
+      "slug": "xiao-bai-cai-chao-dou-fu",
+      "description": "上海青清爽，薄切豆腐片软嫩微煎，适合做一桌菜里的温和缓冲。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "素菜",
+      "accent": "清香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/45.webp",
+      "images": [
+        "/images/dishes/45.webp"
+      ],
+      "ingredients": [
+        "上海青",
+        "薄切豆腐",
+        "蒜",
+        "盐",
+        "生抽"
+      ],
+      "visible": true,
+      "sortOrder": 45
+    },
+    {
+      "id": 46,
+      "name": "蒜蓉油麦菜",
+      "slug": "suan-rong-you-mai-cai",
+      "description": "油麦菜大火快炒，蒜香明显，清口又不寡淡。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "蒜香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/46.webp",
+      "images": [
+        "/images/dishes/46.webp"
+      ],
+      "ingredients": [
+        "油麦菜",
+        "蒜蓉",
+        "盐",
+        "蚝油"
+      ],
+      "visible": true,
+      "sortOrder": 46
+    },
+    {
+      "id": 47,
+      "name": "蒜苗炒酱牛肉",
+      "slug": "suan-miao-chao-jiang-niu-rou",
+      "description": "酱牛肉切片和蒜苗快炒，酱香足，速度快，很适合补一道下饭肉菜。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "肉菜",
+      "accent": "酱香",
+      "difficulty": "简单",
+      "recommended": true,
+      "servings": "2-3人份",
+      "image": "/images/dishes/47.webp",
+      "images": [
+        "/images/dishes/47.webp"
+      ],
+      "ingredients": [
+        "酱牛肉",
+        "蒜苗",
+        "红椒",
+        "蒜",
+        "生抽",
+        "料酒"
+      ],
+      "visible": true,
+      "sortOrder": 47
+    },
+    {
+      "id": 48,
+      "name": "青椒豆皮",
+      "slug": "qing-jiao-dou-pi",
+      "description": "豆皮和青椒快炒，清爽带蒜香，适合做一桌菜里的轻口热菜。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "清香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/48.webp",
+      "images": [
+        "/images/dishes/48.webp"
+      ],
+      "ingredients": [
+        "豆皮",
+        "青椒",
+        "蒜",
+        "生抽",
+        "盐"
+      ],
+      "visible": true,
+      "sortOrder": 48
+    },
+    {
+      "id": 49,
+      "name": "蒜苔炒肉",
+      "slug": "suan-tai-chao-rou",
+      "description": "蒜苔脆嫩，肉片快炒入味，下饭但不拖泥带水。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "肉菜",
+      "accent": "蒜香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/49.webp",
+      "images": [
+        "/images/dishes/49.webp"
+      ],
+      "ingredients": [
+        "蒜苔",
+        "猪肉片",
+        "红椒",
+        "蒜",
+        "生抽",
+        "料酒",
+        "生粉"
+      ],
+      "visible": true,
+      "sortOrder": 49
+    },
+    {
+      "id": 50,
+      "name": "蒜苔炒鸡蛋",
+      "slug": "suan-tai-chao-ji-dan",
+      "description": "蒜苔清脆配嫩鸡蛋，快、香、稳，补一道素热菜正合适。",
+      "date": "今晚菜单",
+      "prepTime": "15分钟",
+      "category": "素菜",
+      "accent": "清香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2人份",
+      "image": "/images/dishes/50.webp",
+      "images": [
+        "/images/dishes/50.webp"
+      ],
+      "ingredients": [
+        "蒜苔",
+        "鸡蛋",
+        "红椒",
+        "蒜",
+        "盐",
+        "生抽"
+      ],
+      "visible": true,
+      "sortOrder": 50
+    },
+    {
+      "id": 51,
+      "name": "农家一碗香",
+      "slug": "nong-jia-yi-wan-xiang",
+      "description": "五花肉、鸡蛋和辣椒一起炒，香得很直接，属于硬核下饭菜。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "肉菜",
+      "accent": "酱香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/51.webp",
+      "images": [
+        "/images/dishes/51.webp"
+      ],
+      "ingredients": [
+        "五花肉",
+        "鸡蛋",
+        "青椒",
+        "红椒",
+        "蒜",
+        "豆豉",
+        "生抽"
+      ],
+      "visible": true,
+      "sortOrder": 51
+    },
+    {
+      "id": 52,
+      "name": "鱼香肉丝",
+      "slug": "yu-xiang-rou-si",
+      "description": "肉丝、木耳和胡萝卜裹上鱼香汁，酸甜咸香，标准下饭狠角色。",
+      "date": "今晚菜单",
+      "prepTime": "25分钟",
+      "category": "肉菜",
+      "accent": "鱼香",
+      "difficulty": "中等",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/52.webp",
+      "images": [
+        "/images/dishes/52.webp"
+      ],
+      "ingredients": [
+        "猪里脊",
+        "木耳",
+        "胡萝卜",
+        "青椒",
+        "泡椒",
+        "醋",
+        "白糖"
+      ],
+      "visible": true,
+      "sortOrder": 52
+    },
+    {
+      "id": 53,
+      "name": "鲫鱼豆腐汤",
+      "slug": "ji-yu-dou-fu-tang",
+      "description": "鲫鱼煎过再炖，汤色奶白浓郁，豆腐吸饱鲜味，喝一口暖到底。",
+      "date": "今晚菜单",
+      "prepTime": "40分钟",
+      "category": "汤甜",
+      "accent": "鲜香",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/53.webp",
+      "images": [
+        "/images/dishes/53.webp"
+      ],
+      "ingredients": [
+        "鲫鱼 (1条)",
+        "嫩豆腐",
+        "姜",
+        "葱",
+        "料酒",
+        "盐",
+        "白胡椒"
+      ],
+      "visible": true,
+      "sortOrder": 53
+    },
+    {
+      "id": 54,
+      "name": "莴笋炒虾仁",
+      "slug": "wo-sun-chao-xia-ren",
+      "description": "莴笋脆嫩配弹牙虾仁，清炒少油，颜色清爽，吃着不腻。",
+      "date": "今晚菜单",
+      "prepTime": "20分钟",
+      "category": "海鲜",
+      "accent": "清爽",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/54.webp",
+      "images": [
+        "/images/dishes/54.webp"
+      ],
+      "ingredients": [
+        "虾仁",
+        "莴笋",
+        "蒜",
+        "姜",
+        "料酒",
+        "盐",
+        "淀粉"
+      ],
+      "visible": true,
+      "sortOrder": 54
+    },
+    {
+      "id": 55,
+      "name": "盐水排骨",
+      "slug": "yan-shui-pai-gu",
+      "description": "排骨用葱姜花椒煮到咸鲜入味，肉嫩不柴，凉吃热吃都清爽不腻。",
+      "date": "今晚菜单",
+      "prepTime": "40分钟",
+      "category": "肉菜",
+      "accent": "咸鲜",
+      "difficulty": "简单",
+      "recommended": false,
+      "servings": "2-3人份",
+      "image": "/images/dishes/55.webp",
+      "images": [
+        "/images/dishes/55.webp"
+      ],
+      "ingredients": [
+        "猪肋排",
+        "葱",
+        "姜",
+        "花椒",
+        "八角",
+        "料酒",
+        "盐"
+      ],
+      "visible": true,
+      "sortOrder": 55
+    }
+  ]
+}

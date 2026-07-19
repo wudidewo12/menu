@@ -1,0 +1,50 @@
+# Dish Image Credits
+
+Images were downloaded from Wikimedia Commons search results and converted to local WebP files for this personal menu project.
+
+- 红烧排骨: [File:Mianjin hongshao paigu 2009 03.jpg](https://commons.wikimedia.org/wiki/File:Mianjin_hongshao_paigu_2009_03.jpg) by Rolfmueller; CC BY-SA 3.0; local file /images/dishes/hong-shao-pai-gu.webp; query `红烧排骨`.
+- 清蒸鲈鱼: [File:Mashed pepper fish head.jpg](https://commons.wikimedia.org/wiki/File:Mashed_pepper_fish_head.jpg) by Christopher; CC BY 2.0; local file /images/dishes/qing-zheng-lu-yu.webp; query `steamed fish Chinese dish`.
+- 粉丝裹虾: [File:Steamed Shrimp & Vermicelli in Garlic Sauce (6955843275).jpg](https://commons.wikimedia.org/wiki/File:Steamed_Shrimp_&_Vermicelli_in_Garlic_Sauce_(6955843275).jpg) by Daniel Lombraña González from Madrid, Spain; CC BY-SA 2.0; local file /images/dishes/fen-si-guo-xia.webp; query `garlic shrimp vermicelli`.
+- 小炒黄牛肉: [File:Stir-fried yellow beef, Jiangxi cuisine.jpg](https://commons.wikimedia.org/wiki/File:Stir-fried_yellow_beef,_Jiangxi_cuisine.jpg) by Sherbet; CC BY 2.5; local file /images/dishes/xiao-chao-huang-niu-rou.webp; query `小炒黄牛肉`.
+- 孜然羊肉: [File:神廟留中奏疏彙要(十).djvu](https://commons.wikimedia.org/wiki/File:%E7%A5%9E%E5%BB%9F%E7%95%99%E4%B8%AD%E5%A5%8F%E7%96%8F%E5%BD%99%E8%A6%81(%E5%8D%81).djvu) by (明)董其昌輯; Public domain; local file /images/dishes/zi-ran-yang-rou.webp; query `孜然羊肉`.
+- 鱼焖大虾: [File:Drunkenshrimp.jpg](https://commons.wikimedia.org/wiki/File:Drunkenshrimp.jpg) by Laurel F from Seattle, WA; CC BY-SA 2.0; local file /images/dishes/yu-men-da-xia.webp; query `Chinese shrimp dish`.
+- 番茄牛腩: [File:Soup and bread.jpg](https://commons.wikimedia.org/wiki/File:Soup_and_bread.jpg) by Brynn; CC BY-SA 3.0; local file /images/dishes/fan-qie-niu-nan.webp; query `beef tomato stew`.
+- 咖喱肥牛: [File:Beef Curry in Bangladesh.jpg](https://commons.wikimedia.org/wiki/File:Beef_Curry_in_Bangladesh.jpg) by Mohammed Tawsif Salam; CC BY-SA 3.0; local file /images/dishes/ga-li-fei-niu.webp; query `beef curry`.
+- 青椒肉丝: [File:Pepper steak.jpg](https://commons.wikimedia.org/wiki/File:Pepper_steak.jpg) by Bakkai撮影; CC BY-SA 3.0; local file /images/dishes/qing-jiao-rou-si.webp; query `青椒肉丝`.
+- 临沂炒鸡: [File:Crispyfriedchicken.jpg](https://commons.wikimedia.org/wiki/File:Crispyfriedchicken.jpg) by tissue_fleur; CC BY-SA 2.0; local file /images/dishes/lin-yi-chao-ji.webp; query `Chinese fried chicken dish`.
+- 虾仁海带蛋花汤: [File:Egg drop soup.jpg](https://commons.wikimedia.org/wiki/File:Egg_drop_soup.jpg) by Wikimedia Commons contributor; CC BY-SA 2.0; local file /images/dishes/xia-ren-hai-dai-dan-hua-tang.webp; query `egg drop soup`.
+- 麻婆豆腐: [File:Billyfoodmabodofu3.jpg](https://commons.wikimedia.org/wiki/File:Billyfoodmabodofu3.jpg) by Archon6812; CC BY-SA 3.0; local file /images/dishes/ma-po-dou-fu.webp; query `Mapo tofu`.
+- 红烧肉: [File:紅燒肉 Braised pork in brown sauce.jpg](https://commons.wikimedia.org/wiki/File:%E7%B4%85%E7%87%92%E8%82%89_Braised_pork_in_brown_sauce.jpg) by FotoosVanRobin Photostream; CC BY 2.0; local file /images/dishes/hong-shao-rou.webp; query `hong shao rou`.
+- 炒饼丝: [File:Making of chinese noodles 5166105.jpg](https://commons.wikimedia.org/wiki/File:Making_of_chinese_noodles_5166105.jpg) by Ermell; CC0; local file /images/dishes/chao-bing-si.webp; query `Chinese noodles`.
+- 炒方便面: user-provided chat image; local file /images/dishes/chao-fang-bian-mian.webp.
+- 番茄肉酱意面: [File:Spaghetti bolognese (hozinja).jpg](https://commons.wikimedia.org/wiki/File:Spaghetti_bolognese_(hozinja).jpg) by hozinja; CC BY 2.0; local file /images/dishes/fan-qie-rou-jiang-yi-mian.webp; query `spaghetti bolognese`.
+- 小白菜炒腊肉: [File:Stir Fry Wok - Free For Commercial Use - FFCU (27159057131).jpg](https://commons.wikimedia.org/wiki/File:Stir_Fry_Wok_-_Free_For_Commercial_Use_-_FFCU_(27159057131).jpg) by Free for Commercial Use; CC BY-SA 2.0; local file /images/dishes/xiao-bai-cai-chao-la-rou.webp; query `Chinese greens stir fry`.
+- 皮蛋豆腐: [File:Agedashi tofu, fried tofu with broth.jpg](https://commons.wikimedia.org/wiki/File:Agedashi_tofu,_fried_tofu_with_broth.jpg) by HungryHuy; CC BY 2.0; local file /images/dishes/pi-dan-dou-fu.webp; query `tofu dish`.
+- 香菇炒上海青: [File:Stir fry (4354349209).jpg](https://commons.wikimedia.org/wiki/File:Stir_fry_(4354349209).jpg) by Karen and Brad Emerson; CC BY 2.0; local file /images/dishes/xiang-gu-chao-shang-hai-qing.webp; query `bok choy mushroom stir fry`.
+- 猪肉白菜炖粉条: [File:MP - chicken stir fry 1.jpg](https://commons.wikimedia.org/wiki/File:MP_-_chicken_stir_fry_1.jpg) by Mark Pellegrini; CC BY-SA 2.5; local file /images/dishes/zhu-rou-bai-cai-dun-fen-tiao.webp; query `Chinese stir fry dish`.
+- 番茄鸡蛋: [File:Piperade 01.jpg](https://commons.wikimedia.org/wiki/File:Piperade_01.jpg) by Arnaud 25; CC BY-SA 4.0; local file /images/dishes/fan-qie-ji-dan.webp; query `番茄炒蛋`.
+- 红烧鱼: [File:Mashed pepper fish head.jpg](https://commons.wikimedia.org/wiki/File:Mashed_pepper_fish_head.jpg); local file /images/dishes/hong-shao-yu.webp; direct fallback.
+- 酸菜鱼: copied from [File:Mashed pepper fish head.jpg](https://commons.wikimedia.org/wiki/File:Mashed_pepper_fish_head.jpg); local file /images/dishes/suan-cai-yu.webp; quick fish-dish fallback.
+- 风味茄子: [File:Chinese eggplant (Berenjena china).jpg](https://commons.wikimedia.org/wiki/File:Chinese_eggplant_(Berenjena_china).jpg); local file /images/dishes/feng-wei-qie-zi.webp; direct fallback.
+- 糖醋里脊: [File:Sweet sour pork.jpg](https://commons.wikimedia.org/wiki/File:Sweet_sour_pork.jpg); local file /images/dishes/tang-cu-li-ji.webp; direct fallback.
+- 蛋炒饭: [File:Egg fried rice.jpg](https://commons.wikimedia.org/wiki/File:Egg_fried_rice.jpg); local file /images/dishes/dan-chao-fan.webp; direct fallback.
+- 肉末茄子: [File:Chinese eggplant (Berenjena china).jpg](https://commons.wikimedia.org/wiki/File:Chinese_eggplant_(Berenjena_china).jpg); local file /images/dishes/rou-mo-qie-zi.webp; direct fallback.
+- 清汤排骨: [File:Pork soup.jpg](https://commons.wikimedia.org/wiki/File:Pork_soup.jpg); local file /images/dishes/qing-tang-pai-gu.webp; direct fallback.
+- 牛排: [File:Steak (1).jpg](https://commons.wikimedia.org/wiki/File:Steak_(1).jpg); local file /images/dishes/niu-pai.webp; direct fallback.
+- 奥尔良烤鸡翅: [File:Bbq chicken wings.JPG](https://commons.wikimedia.org/wiki/File:Bbq_chicken_wings.JPG); local file /images/dishes/ao-er-liang-kao-ji-chi.webp; direct fallback.
+- 包菜鸡蛋炒粉丝: [File:Oyster-Vermicelli.jpg](https://commons.wikimedia.org/wiki/File:Oyster-Vermicelli.jpg); local file /images/dishes/bao-cai-ji-dan-chao-fen-si.webp; direct fallback.
+- 回锅肉: [File:Twice-cooked Pork 回锅肉 (1648213963).jpg](https://commons.wikimedia.org/wiki/File:Twice-cooked_Pork_%E5%9B%9E%E9%94%85%E8%82%89_(1648213963).jpg); local file /images/dishes/hui-guo-rou.webp; direct fallback.
+- 宫保鸡丁: copied from [File:Crispyfriedchicken.jpg](https://commons.wikimedia.org/wiki/File:Crispyfriedchicken.jpg); local file /images/dishes/gong-bao-ji-ding.webp; quick same-category fallback.
+- 红烧排骨焖面: copied from [File:Making of chinese noodles 5166105.jpg](https://commons.wikimedia.org/wiki/File:Making_of_chinese_noodles_5166105.jpg); local file /images/dishes/hong-shao-pai-gu-men-mian.webp; quick same-category fallback.
+- 青椒鸡蛋: copied from [File:Piperade 01.jpg](https://commons.wikimedia.org/wiki/File:Piperade_01.jpg); local file /images/dishes/qing-jiao-ji-dan.webp; quick egg-dish fallback.
+- 米酒汤圆: copied from [File:Egg drop soup.jpg](https://commons.wikimedia.org/wiki/File:Egg_drop_soup.jpg); local file /images/dishes/mi-jiu-tang-yuan.webp; quick soup-bowl fallback.
+- 辣椒炒面: copied from /images/dishes/chao-bing-si.webp; local file /images/dishes/la-jiao-chao-mian.webp; quick noodle fallback.
+- 炒合菜: copied from /images/dishes/bao-cai-ji-dan-chao-fen-si.webp; local file /images/dishes/chao-he-cai.webp; quick vegetable fallback.
+- 拍黄瓜拌变蛋: copied from /images/dishes/pi-dan-dou-fu.webp; local file /images/dishes/pai-huang-gua-ban-bian-dan.webp; quick cold-dish fallback.
+- 手撕包菜: copied from /images/dishes/xiao-bai-cai-chao-la-rou.webp; local file /images/dishes/shou-si-bao-cai.webp; quick greens fallback.
+- 紫菜蛋花汤: copied from /images/dishes/xia-ren-hai-dai-dan-hua-tang.webp; local file /images/dishes/zi-cai-dan-hua-tang.webp; quick soup fallback.
+- 葱爆羊肉: copied from /images/dishes/zi-ran-yang-rou.webp; local file /images/dishes/cong-bao-yang-rou.webp; quick lamb fallback.
+- 京酱肉丝: copied from /images/dishes/qing-jiao-rou-si.webp; local file /images/dishes/jing-jiang-rou-si.webp; quick pork fallback.
+- 肉片汤: copied from /images/dishes/qing-tang-pai-gu.webp; local file /images/dishes/rou-pian-tang.webp; quick soup fallback.
+- 小白菜炒豆腐: copied from /images/dishes/pi-dan-dou-fu.webp; local file /images/dishes/xiao-bai-cai-chao-dou-fu.webp; quick tofu fallback.
+- 蒜蓉油麦菜: copied from /images/dishes/xiang-gu-chao-shang-hai-qing.webp; local file /images/dishes/suan-rong-you-mai-cai.webp; quick greens fallback.

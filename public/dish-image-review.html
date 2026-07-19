@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dish Image Review</title>
+    <style>
+      :root {
+        color: #261812;
+        background: #f5efe5;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 18px 56px;
+      }
+
+      header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: 0;
+      }
+
+      .summary {
+        color: #7a6659;
+        font-size: 14px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 18px;
+      }
+
+      article {
+        overflow: hidden;
+        border: 1px solid #dfd3c2;
+        border-radius: 8px;
+        background: #fffaf2;
+      }
+
+      .media {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: #dfd3c2;
+      }
+
+      figure {
+        position: relative;
+        margin: 0;
+        background: #eadfd0;
+      }
+
+      figure img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+      }
+
+      figcaption {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        border-radius: 999px;
+        background: rgba(38, 24, 18, 0.82);
+        color: #fffaf2;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .body {
+        padding: 14px;
+      }
+
+      h2 {
+        margin: 0 0 5px;
+        font-size: 20px;
+      }
+
+      .slug {
+        margin-bottom: 10px;
+        color: #8b7565;
+        font-size: 12px;
+      }
+
+      .prompt {
+        margin: 0;
+        color: #59483d;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .status {
+        display: inline-flex;
+        margin-top: 10px;
+        border-radius: 999px;
+        background: #e8f1e7;
+        color: #1f6d50;
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .status.failed {
+        background: #f5dfd8;
+        color: #963b25;
+      }
+
+      @media (max-width: 720px) {
+        header {
+          display: block;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <div class="summary">Menu image review</div>
+          <h1>菜图 Review</h1>
+        </div>
+        <div class="summary" id="summary">Loading...</div>
+      </header>
+      <section class="grid" id="grid"></section>
+    </main>
+
+    <script>
+      const grid = document.querySelector('#grid');
+      const summary = document.querySelector('#summary');
+
+      function card(item) {
+        const article = document.createElement('article');
+        article.innerHTML = `
+          <div class="media">
+            <figure>
+              <img src="${item.originalImage}" alt="${item.name} 原图" loading="lazy" />
+              <figcaption>原图</figcaption>
+            </figure>
+            <figure>
+              <img src="${item.reviewImage}" alt="${item.name} 新图" loading="lazy" />
+              <figcaption>新图</figcaption>
+            </figure>
+          </div>
+          <div class="body">
+            <h2>${item.name}</h2>
+            <div class="slug">${item.slug}</div>
+            <p class="prompt">${item.prompt}</p>
+            <span class="status ${item.status === 'failed' ? 'failed' : ''}">${item.status}</span>
+          </div>
+        `;
+        return article;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const dataUrl = params.get('data') || '/images/dish-review/review-data.json';
+
+      fetch(dataUrl)
+        .then((response) => response.json())
+        .then((items) => {
+          const generated = items.filter((item) => item.status !== 'failed').length;
+          summary.textContent = `${generated}/${items.length} generated · ${dataUrl}`;
+          grid.replaceChildren(...items.map(card));
+        })
+        .catch(() => {
+          summary.textContent = 'No review data';
+          grid.innerHTML = '<p>还没有生成 review-data.json。</p>';
+        });
+    </script>
+  </body>
+</html>
