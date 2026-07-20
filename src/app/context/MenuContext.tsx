@@ -1,19 +1,21 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { dishes as fallbackDishes } from '../data/dishes.mjs';
+import type { MenuDish } from '../../types/dish';
+import type { Menu, MenuSection, MenuSettings } from '../../types/menu';
 
-const fallbackSections = [
-  { id: 'recommend', label: '推荐', title: '今晚推荐', note: '掌勺的拿手菜，先点不踩雷', category: null, recommendedOnly: true, sortOrder: 1 },
-  { id: 'cold', label: '凉菜', title: '凉菜', note: '开场先垫一口', category: '凉菜', recommendedOnly: false, sortOrder: 2 },
-  { id: 'seafood', label: '海鲜', title: '海鲜河鲜', note: '鲜味担当', category: '海鲜', recommendedOnly: false, sortOrder: 3 },
-  { id: 'meat', label: '肉菜', title: '肉菜', note: '硬菜撑场面', category: '肉菜', recommendedOnly: false, sortOrder: 4 },
-  { id: 'veggie', label: '素菜', title: '素菜时蔬', note: '解腻清口', category: '素菜', recommendedOnly: false, sortOrder: 5 },
-  { id: 'staple', label: '主食', title: '主食', note: '压轴管饱', category: '主食', recommendedOnly: false, sortOrder: 6 },
-  { id: 'soup', label: '汤甜', title: '汤羹甜品', note: '收尾暖胃', category: '汤甜', recommendedOnly: false, sortOrder: 7 },
+const fallbackSections: MenuSection[] = [
+  { id: 'recommend', label: '推荐', title: '今晚推荐', note: '掌勺的拿手菜，先点不踩雷', category: null, recommendedOnly: true, dishIds: null, sortOrder: 1 },
+  { id: 'cold', label: '凉菜', title: '凉菜', note: '开场先垫一口', category: '凉菜', recommendedOnly: false, dishIds: null, sortOrder: 2 },
+  { id: 'seafood', label: '海鲜', title: '海鲜河鲜', note: '鲜味担当', category: '海鲜', recommendedOnly: false, dishIds: null, sortOrder: 3 },
+  { id: 'meat', label: '肉菜', title: '肉菜', note: '硬菜撑场面', category: '肉菜', recommendedOnly: false, dishIds: null, sortOrder: 4 },
+  { id: 'veggie', label: '素菜', title: '素菜时蔬', note: '解腻清口', category: '素菜', recommendedOnly: false, dishIds: null, sortOrder: 5 },
+  { id: 'staple', label: '主食', title: '主食', note: '压轴管饱', category: '主食', recommendedOnly: false, dishIds: null, sortOrder: 6 },
+  { id: 'soup', label: '汤甜', title: '汤羹甜品', note: '收尾暖胃', category: '汤甜', recommendedOnly: false, dishIds: null, sortOrder: 7 },
 ];
 
-const fallbackMenu = {
+const fallbackMenu: Menu = {
   version: 1,
   updatedAt: '',
   settings: {
@@ -28,10 +30,30 @@ const fallbackMenu = {
   })),
 };
 
-const MenuContext = createContext(null);
+interface MenuContextValue {
+  menu: Menu;
+  settings: MenuSettings;
+  dishes: MenuDish[];
+  sections: MenuSection[];
+  loading: boolean;
+  error: string | null;
+  refreshMenu: () => Promise<Menu>;
+}
 
-function cleanDishIds(ids) {
-  const seen = new Set();
+interface MenuProviderProps {
+  children: ReactNode;
+}
+
+type UnknownRecord = Record<string, unknown>;
+
+const MenuContext = createContext<MenuContextValue | null>(null);
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function cleanDishIds(ids: unknown): number[] {
+  const seen = new Set<number>();
   return (Array.isArray(ids) ? ids : [])
     .map(Number)
     .filter((id) => {
@@ -41,20 +63,21 @@ function cleanDishIds(ids) {
     });
 }
 
-function normalizeMenu(menu) {
-  const rawDishes = Array.isArray(menu?.dishes) ? menu.dishes : fallbackMenu.dishes;
-  const rawSettings = menu?.settings && typeof menu.settings === 'object' ? menu.settings : fallbackMenu.settings;
+function normalizeMenu(input: unknown): Menu {
+  const menu = isRecord(input) ? input : {};
+  const rawDishes: unknown[] = Array.isArray(menu.dishes) ? menu.dishes : fallbackMenu.dishes;
+  const rawSettings: UnknownRecord = isRecord(menu.settings) ? menu.settings : { ...fallbackMenu.settings };
   const rawSections = Array.isArray(rawSettings.sections) ? rawSettings.sections : fallbackSections;
 
   return {
-    version: Number(menu?.version) || 1,
-    updatedAt: menu?.updatedAt || '',
+    version: Number(menu.version) || 1,
+    updatedAt: String(menu.updatedAt || ''),
     settings: {
-      title: rawSettings.title || '灶台菜单',
-      subtitle: rawSettings.subtitle || '',
+      title: String(rawSettings.title || '灶台菜单'),
+      subtitle: String(rawSettings.subtitle || ''),
       sections: rawSections
-        .filter((section) => section && section.id && section.label)
-        .map((section, index) => ({
+        .filter((section): section is UnknownRecord => isRecord(section) && Boolean(section.id) && Boolean(section.label))
+        .map((section, index): MenuSection => ({
           id: String(section.id),
           label: String(section.label),
           title: String(section.title || section.label),
@@ -67,8 +90,13 @@ function normalizeMenu(menu) {
         .sort((a, b) => a.sortOrder - b.sortOrder),
     },
     dishes: rawDishes
-      .filter((dish) => dish && Number.isFinite(Number(dish.id)) && dish.name && dish.visible !== false)
-      .map((dish, index) => {
+      .filter((dish): dish is UnknownRecord => (
+        isRecord(dish)
+        && Number.isFinite(Number(dish.id))
+        && Boolean(dish.name)
+        && dish.visible !== false
+      ))
+      .map((dish, index): MenuDish => {
         const image = dish.image || '/images/dishes/default-dish.png';
         return {
           id: Number(dish.id),
@@ -93,12 +121,12 @@ function normalizeMenu(menu) {
   };
 }
 
-export function MenuProvider({ children }) {
-  const [menu, setMenu] = useState(() => normalizeMenu(fallbackMenu));
+export function MenuProvider({ children }: MenuProviderProps) {
+  const [menu, setMenu] = useState<Menu>(() => normalizeMenu(fallbackMenu));
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const refreshMenu = useCallback(async () => {
+  const refreshMenu = useCallback(async (): Promise<Menu> => {
     try {
       const response = await fetch('/api/menu', { cache: 'no-store' });
       if (!response.ok) throw new Error(`Menu API ${response.status}`);
@@ -106,8 +134,8 @@ export function MenuProvider({ children }) {
       setMenu(nextMenu);
       setError(null);
       return nextMenu;
-    } catch (nextError) {
-      setError(nextError.message);
+    } catch (nextError: unknown) {
+      setError(nextError instanceof Error ? nextError.message : '读取菜单失败');
       return normalizeMenu(fallbackMenu);
     } finally {
       setLoading(false);
