@@ -1,6 +1,6 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { dishes } from '../src/app/data/dishes.js';
+import { dishes } from '../src/app/data/dishes.mjs';
 
 const sections = [
   { id: 'recommend', label: '推荐', title: '今晚推荐', note: '掌勺的拿手菜，先点不踩雷', category: null, recommendedOnly: true },
@@ -18,9 +18,8 @@ const sections = [
   sortOrder: index + 1,
 }));
 
-const menu = {
+const generatedMenu = {
   version: 1,
-  updatedAt: new Date().toISOString(),
   settings: {
     title: '灶台菜单',
     subtitle: `今晚想吃什么，自己点 · 共 ${dishes.length} 道家常菜`,
@@ -34,6 +33,40 @@ const menu = {
 };
 
 const outputPath = path.join(process.cwd(), 'data', 'menu-seed.json');
+
+async function readExistingMenu() {
+  try {
+    const source = await readFile(outputPath, 'utf8');
+    return { menu: JSON.parse(source), source };
+  } catch (error) {
+    if (error.code === 'ENOENT' || error instanceof SyntaxError) return null;
+    throw error;
+  }
+}
+
+const existing = await readExistingMenu();
+const existingContent = existing
+  ? {
+      version: existing.menu.version,
+      settings: existing.menu.settings,
+      dishes: existing.menu.dishes,
+    }
+  : null;
+const contentUnchanged = JSON.stringify(existingContent) === JSON.stringify(generatedMenu);
+const menu = {
+  version: generatedMenu.version,
+  updatedAt: contentUnchanged && typeof existing.menu.updatedAt === 'string'
+    ? existing.menu.updatedAt
+    : new Date().toISOString(),
+  settings: generatedMenu.settings,
+  dishes: generatedMenu.dishes,
+};
+const output = `${JSON.stringify(menu, null, 2)}\n`;
+
 await mkdir(path.dirname(outputPath), { recursive: true });
-await writeFile(outputPath, `${JSON.stringify(menu, null, 2)}\n`);
-console.log(`Wrote ${outputPath} (${dishes.length} dishes)`);
+if (existing?.source === output) {
+  console.log(`Unchanged ${outputPath} (${dishes.length} dishes)`);
+} else {
+  await writeFile(outputPath, output);
+  console.log(`Wrote ${outputPath} (${dishes.length} dishes)`);
+}

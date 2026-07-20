@@ -35,7 +35,13 @@ pnpm install
 
 ### 2. 设置本地管理员密码
 
-在项目根目录创建 `.env.local`：
+先复制项目提供的安全模板：
+
+```bash
+cp .env.example .env.local
+```
+
+然后打开项目根目录的 `.env.local`，填写本地密码：
 
 ```env
 ADMIN_PASSWORD=请替换成随机强密码

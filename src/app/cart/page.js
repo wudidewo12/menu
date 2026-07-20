@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '../context/CartContext';
-import { fallbackDishImage } from '../data/dishes';
+import { fallbackDishImage } from '../data/dishes.mjs';
 
 function ArrowLeftIcon() {
   return (

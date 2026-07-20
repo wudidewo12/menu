@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useMenu } from '../../context/MenuContext';
-import { fallbackDishImage } from '../../data/dishes';
+import { fallbackDishImage } from '../../data/dishes.mjs';
 
 function ArrowLeftIcon() {
   return (

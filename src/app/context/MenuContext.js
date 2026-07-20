@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { dishes as fallbackDishes } from '../data/dishes';
+import { dishes as fallbackDishes } from '../data/dishes.mjs';
 
 const fallbackSections = [
   { id: 'recommend', label: '推荐', title: '今晚推荐', note: '掌勺的拿手菜，先点不踩雷', category: null, recommendedOnly: true, sortOrder: 1 },

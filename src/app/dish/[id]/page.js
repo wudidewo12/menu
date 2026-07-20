@@ -1,4 +1,4 @@
-import { dishes, dishesById } from '../../data/dishes';
+import { dishes, dishesById } from '../../data/dishes.mjs';
 import DishDetailClient from './DishDetailClient';
 
 export async function generateStaticParams() {
