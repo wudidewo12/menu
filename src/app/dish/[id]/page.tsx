@@ -1,13 +1,21 @@
 import { dishes, dishesById } from '../../data/dishes.mjs';
 import DishDetailClient from './DishDetailClient';
 
-export async function generateStaticParams() {
+interface DishRouteParams {
+  id: string;
+}
+
+interface DishDetailPageProps {
+  params: Promise<DishRouteParams>;
+}
+
+export async function generateStaticParams(): Promise<DishRouteParams[]> {
   return dishes.map((dish) => ({
     id: String(dish.id),
   }));
 }
 
-export default async function DishDetail({ params }) {
+export default async function DishDetail({ params }: DishDetailPageProps) {
   const { id } = await params;
   const dish = dishesById[id];
 
