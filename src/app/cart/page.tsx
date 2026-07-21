@@ -5,6 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '../context/CartContext';
 import { fallbackDishImage } from '../data/dishes.mjs';
+import type { CartItem } from '../../types/order';
+
+interface CartImageProps {
+  item: CartItem;
+}
 
 function ArrowLeftIcon() {
   return (
@@ -30,8 +35,8 @@ function TrashIcon() {
   );
 }
 
-function CartImage({ item }) {
-  const [src, setSrc] = useState(item.image || fallbackDishImage);
+function CartImage({ item }: CartImageProps) {
+  const [src, setSrc] = useState<string>(item.image || fallbackDishImage);
 
   return (
     <Image
@@ -45,14 +50,14 @@ function CartImage({ item }) {
   );
 }
 
-const categoryOrder = ['凉菜', '海鲜', '肉菜', '素菜', '主食', '汤甜'];
+const categoryOrder: readonly string[] = ['凉菜', '海鲜', '肉菜', '素菜', '主食', '汤甜'];
 
 export default function CartPage() {
   const { cartItems, removeFromCart, clearCart, hrefWithSession } = useCart();
   const count = cartItems.length;
 
-  const categorySummary = useMemo(() => {
-    const counts = new Map();
+  const categorySummary = useMemo<Array<[string, number]>>(() => {
+    const counts = new Map<string, number>();
     cartItems.forEach((item) => {
       counts.set(item.category, (counts.get(item.category) || 0) + 1);
     });
@@ -61,9 +66,9 @@ export default function CartPage() {
     );
   }, [cartItems]);
 
-  const missingHint = useMemo(() => {
+  const missingHint = useMemo<string | null>(() => {
     if (!cartItems.length) return null;
-    const picked = new Set(cartItems.map((item) => item.category));
+    const picked = new Set<string>(cartItems.map((item) => item.category));
     if (!picked.has('素菜') && !picked.has('凉菜')) return '这一桌偏荤，配一两道素菜时蔬会更解腻。';
     if (!picked.has('肉菜') && !picked.has('海鲜')) return '还差道硬菜撑场面，看看肉菜或海鲜？';
     if (!picked.has('汤甜')) return '可以再加一道汤羹甜品收尾。';
