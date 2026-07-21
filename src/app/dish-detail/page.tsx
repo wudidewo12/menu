@@ -6,17 +6,19 @@ import { useCart } from '../context/CartContext';
 import { useMenu } from '../context/MenuContext';
 import DishDetailClient from '../dish/[id]/DishDetailClient';
 
-function currentDishId() {
+function currentDishId(): number | null {
   if (typeof window === 'undefined') return null;
   const params = new URLSearchParams(window.location.search);
-  const id = Number(params.get('id'));
-  return Number.isFinite(id) ? id : null;
+  const rawId = params.get('id');
+  if (!rawId) return null;
+  const id = Number(rawId);
+  return Number.isInteger(id) && id > 0 ? id : null;
 }
 
 export default function DishDetailRuntimePage() {
   const { dishes, loading } = useMenu();
   const { hrefWithSession } = useCart();
-  const [dishId, setDishId] = useState(null);
+  const [dishId, setDishId] = useState<number | null>(null);
 
   useEffect(() => {
     setDishId(currentDishId());
