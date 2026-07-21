@@ -1,4 +1,4 @@
-import type { MenuDish } from './dish';
+import type { Dish } from './dish';
 
 export interface OrderItem {
   id: number;
@@ -11,6 +11,6 @@ export interface Order {
   items: OrderItem[];
 }
 
-export interface CartItem extends MenuDish {
+export interface CartItem extends Dish {
   quantity: number;
 }

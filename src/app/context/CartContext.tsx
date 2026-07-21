@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMenu } from './MenuContext';
-import type { MenuDish } from '../../types/dish';
+import type { Dish, MenuDish } from '../../types/dish';
 import type { CartItem, OrderItem } from '../../types/order';
 
 const CART_STORAGE_KEY = 'menu.selectedDishes.v1';
@@ -12,7 +12,7 @@ interface CartContextValue {
   cartLoaded: boolean;
   syncError: string | null;
   sessionId: string;
-  addToCart: (dish: MenuDish) => void;
+  addToCart: (dish: Dish) => void;
   removeFromCart: (dishId: number) => void;
   updateQuantity: (dishId: number, quantity: number) => void;
   getTotalItems: () => number;
@@ -149,7 +149,7 @@ export function CartProvider({ children }: CartProviderProps) {
     setCartItems((prevItems) => hydrateCart(orderItemsFromCart(prevItems), dishesById));
   }, [dishesById]);
 
-  const addToCart = useCallback((dish: MenuDish): void => {
+  const addToCart = useCallback((dish: Dish): void => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === dish.id);
       const nextItems = existingItem ? prevItems : [...prevItems, { ...dish, quantity: 1 }];
