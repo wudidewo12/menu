@@ -1,29 +1,60 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMenu } from './MenuContext';
+import type { MenuDish } from '../../types/dish';
+import type { CartItem, OrderItem } from '../../types/order';
 
-const CartContext = createContext();
 const CART_STORAGE_KEY = 'menu.selectedDishes.v1';
 
-function getBrowserSessionId() {
+interface CartContextValue {
+  cartItems: CartItem[];
+  cartLoaded: boolean;
+  syncError: string | null;
+  sessionId: string;
+  addToCart: (dish: MenuDish) => void;
+  removeFromCart: (dishId: number) => void;
+  updateQuantity: (dishId: number, quantity: number) => void;
+  getTotalItems: () => number;
+  clearCart: () => void;
+  isInCart: (dishId: number) => boolean;
+  hrefWithSession: (href: string) => string;
+}
+
+interface CartProviderProps {
+  children: ReactNode;
+}
+
+interface LoadOrderOptions {
+  silent?: boolean;
+}
+
+type UnknownRecord = Record<string, unknown>;
+
+const CartContext = createContext<CartContextValue | null>(null);
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getBrowserSessionId(): string {
   if (typeof window === 'undefined') return 'today';
   const params = new URLSearchParams(window.location.search);
   const rawSession = params.get('session') || 'today';
   return /^[a-zA-Z0-9_-]{1,64}$/.test(rawSession) ? rawSession : 'today';
 }
 
-function orderItemsFromCart(items) {
+function orderItemsFromCart(items: CartItem[]): OrderItem[] {
   return items.map((item) => ({
     id: item.id,
     quantity: Math.max(1, Number(item.quantity) || 1),
   }));
 }
 
-function hydrateCart(orderItems, dishesById) {
-  return orderItems
-    .filter((item) => item && Number.isFinite(Number(item.id)))
-    .map((item) => {
+function hydrateCart(orderItems: unknown, dishesById: ReadonlyMap<number, MenuDish>): CartItem[] {
+  return (Array.isArray(orderItems) ? orderItems : [])
+    .filter((item): item is UnknownRecord => isRecord(item) && Number.isFinite(Number(item.id)))
+    .map((item): CartItem | null => {
       const currentDish = dishesById.get(Number(item.id));
       if (!currentDish) return null;
       return {
@@ -31,10 +62,10 @@ function hydrateCart(orderItems, dishesById) {
         quantity: Math.max(1, Number(item.quantity) || 1),
       };
     })
-    .filter(Boolean);
+    .filter((item): item is CartItem => item !== null);
 }
 
-function readLocalCart(dishesById) {
+function readLocalCart(dishesById: ReadonlyMap<number, MenuDish>): CartItem[] {
   try {
     const savedCart = window.localStorage.getItem(CART_STORAGE_KEY);
     if (!savedCart) return [];
@@ -47,26 +78,26 @@ function readLocalCart(dishesById) {
   }
 }
 
-export function CartProvider({ children }) {
+export function CartProvider({ children }: CartProviderProps) {
   const { dishes } = useMenu();
-  const dishesById = useMemo(() => new Map(dishes.map((dish) => [dish.id, dish])), [dishes]);
+  const dishesById = useMemo(() => new Map<number, MenuDish>(dishes.map((dish) => [dish.id, dish])), [dishes]);
   const [sessionId, setSessionId] = useState('today');
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartLoaded, setCartLoaded] = useState(false);
-  const [syncError, setSyncError] = useState(null);
-  const savingRef = useRef(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const savingRef = useRef<boolean>(false);
 
   useEffect(() => {
     setSessionId(getBrowserSessionId());
   }, []);
 
-  const applyOrder = useCallback((order) => {
-    const nextCart = hydrateCart(Array.isArray(order?.items) ? order.items : [], dishesById);
+  const applyOrder = useCallback((order: unknown): CartItem[] => {
+    const nextCart = hydrateCart(isRecord(order) ? order.items : [], dishesById);
     setCartItems(nextCart);
     return nextCart;
   }, [dishesById]);
 
-  const loadOrder = useCallback(async ({ silent = false } = {}) => {
+  const loadOrder = useCallback(async ({ silent = false }: LoadOrderOptions = {}): Promise<void> => {
     if (savingRef.current) return;
 
     try {
@@ -75,8 +106,8 @@ export function CartProvider({ children }) {
       const order = await response.json();
       applyOrder(order);
       setSyncError(null);
-    } catch (error) {
-      setSyncError(error.message);
+    } catch (error: unknown) {
+      setSyncError(error instanceof Error ? error.message : '读取订单失败');
       if (!silent) {
         setCartItems(readLocalCart(dishesById));
       }
@@ -85,7 +116,7 @@ export function CartProvider({ children }) {
     }
   }, [applyOrder, dishesById, sessionId]);
 
-  const saveOrder = useCallback(async (nextItems) => {
+  const saveOrder = useCallback(async (nextItems: CartItem[]): Promise<void> => {
     const payload = { items: orderItemsFromCart(nextItems) };
 
     try {
@@ -99,8 +130,8 @@ export function CartProvider({ children }) {
       const savedOrder = await response.json();
       applyOrder(savedOrder);
       setSyncError(null);
-    } catch (error) {
-      setSyncError(error.message);
+    } catch (error: unknown) {
+      setSyncError(error instanceof Error ? error.message : '保存订单失败');
       window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload.items));
     } finally {
       savingRef.current = false;
@@ -118,7 +149,7 @@ export function CartProvider({ children }) {
     setCartItems((prevItems) => hydrateCart(orderItemsFromCart(prevItems), dishesById));
   }, [dishesById]);
 
-  const addToCart = useCallback((dish) => {
+  const addToCart = useCallback((dish: MenuDish): void => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === dish.id);
       const nextItems = existingItem ? prevItems : [...prevItems, { ...dish, quantity: 1 }];
@@ -127,7 +158,7 @@ export function CartProvider({ children }) {
     });
   }, [saveOrder]);
 
-  const removeFromCart = useCallback((dishId) => {
+  const removeFromCart = useCallback((dishId: number): void => {
     setCartItems((prevItems) => {
       const nextItems = prevItems.filter((item) => item.id !== dishId);
       saveOrder(nextItems);
@@ -135,7 +166,7 @@ export function CartProvider({ children }) {
     });
   }, [saveOrder]);
 
-  const updateQuantity = useCallback((dishId, quantity) => {
+  const updateQuantity = useCallback((dishId: number, quantity: number): void => {
     setCartItems((prevItems) => {
       const nextItems = quantity <= 0
         ? prevItems.filter((item) => item.id !== dishId)
@@ -145,20 +176,20 @@ export function CartProvider({ children }) {
     });
   }, [saveOrder]);
 
-  const getTotalItems = useCallback(() => {
+  const getTotalItems = useCallback((): number => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   }, [cartItems]);
 
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback((): void => {
     setCartItems([]);
     saveOrder([]);
   }, [saveOrder]);
 
-  const isInCart = useCallback((dishId) => {
+  const isInCart = useCallback((dishId: number): boolean => {
     return cartItems.some((item) => item.id === dishId);
   }, [cartItems]);
 
-  const hrefWithSession = useCallback((href) => {
+  const hrefWithSession = useCallback((href: string): string => {
     if (sessionId === 'today') return href;
     const separator = href.includes('?') ? '&' : '?';
     return `${href}${separator}session=${encodeURIComponent(sessionId)}`;
