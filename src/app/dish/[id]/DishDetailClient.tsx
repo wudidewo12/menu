@@ -7,6 +7,23 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useMenu } from '../../context/MenuContext';
 import { fallbackDishImage } from '../../data/dishes.mjs';
+import type { Dish } from '../../../types/dish';
+
+interface IconProps {
+  className?: string;
+}
+
+interface DishImageProps {
+  src?: string;
+  alt: string;
+  priority?: boolean;
+  className?: string;
+  sizes: string;
+}
+
+interface DishDetailClientProps {
+  dish: Dish;
+}
 
 function ArrowLeftIcon() {
   return (
@@ -16,7 +33,7 @@ function ArrowLeftIcon() {
   );
 }
 
-function CartIcon({ className = 'h-5 w-5' }) {
+function CartIcon({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.4 5.2A1.5 1.5 0 007 20h10a1.5 1.5 0 001.4-1.8L17 13M9 17h.01M15 17h.01" />
@@ -24,7 +41,7 @@ function CartIcon({ className = 'h-5 w-5' }) {
   );
 }
 
-function CheckIcon({ className = 'h-5 w-5' }) {
+function CheckIcon({ className = 'h-5 w-5' }: IconProps) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -47,12 +64,12 @@ function ClockIcon() {
   );
 }
 
-function minutesOf(dish) {
+function minutesOf(dish: Dish): number {
   return Number.parseInt(dish.prepTime, 10) || 30;
 }
 
-function DishImage({ src, alt, priority = false, className = 'object-cover', sizes }) {
-  const [imageSrc, setImageSrc] = useState(src || fallbackDishImage);
+function DishImage({ src, alt, priority = false, className = 'object-cover', sizes }: DishImageProps) {
+  const [imageSrc, setImageSrc] = useState<string>(src || fallbackDishImage);
 
   return (
     <Image
@@ -67,7 +84,7 @@ function DishImage({ src, alt, priority = false, className = 'object-cover', siz
   );
 }
 
-export default function DishDetailClient({ dish }) {
+export default function DishDetailClient({ dish }: DishDetailClientProps) {
   const { dishes } = useMenu();
   const { addToCart, removeFromCart, isInCart, getTotalItems, hrefWithSession } = useCart();
   const router = useRouter();
@@ -77,11 +94,12 @@ export default function DishDetailClient({ dish }) {
   const heroImage = dish.image || fallbackDishImage;
   const quick = minutesOf(dish) <= 20;
 
-  const difficultyTone = {
+  const difficultyTones: Record<string, string> = {
     简单: 'detail-stat-jade',
     中等: 'detail-stat-brass',
     困难: 'detail-stat-lacquer',
-  }[dish.difficulty] || '';
+  };
+  const difficultyTone = difficultyTones[dish.difficulty] || '';
 
   const related = dishes
     .filter((item) => item.category === dish.category && item.id !== dish.id)
