@@ -5,16 +5,55 @@ import Link from 'next/link';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useMenu } from '../context/MenuContext';
+import type { MenuDish } from '../../types/dish';
+import type { MenuSection } from '../../types/menu';
+import type { CartItem } from '../../types/order';
 
-function minutesOf(dish) {
+type AddDish = (dish: MenuDish) => void;
+type RemoveDish = (dishId: number) => void;
+type HrefWithSession = (href: string) => string;
+
+interface MenuSectionWithDishes extends MenuSection {
+  dishes: MenuDish[];
+}
+
+interface CartIconProps {
+  className?: string;
+}
+
+interface ToggleButtonProps {
+  dish: MenuDish;
+  selected: boolean;
+  onAdd: AddDish;
+  onRemove: RemoveDish;
+  size?: string;
+}
+
+interface DishRowProps {
+  dish: MenuDish;
+  selected: boolean;
+  priority: boolean;
+  onAdd: AddDish;
+  onRemove: RemoveDish;
+  hrefWithSession: HrefWithSession;
+}
+
+interface OrderRailProps {
+  cartItems: CartItem[];
+  totalItems: number;
+  onRemove: RemoveDish;
+  hrefWithSession: HrefWithSession;
+}
+
+function minutesOf(dish: MenuDish): number {
   return Number.parseInt(dish.prepTime, 10) || 30;
 }
 
-function isQuick(dish) {
+function isQuick(dish: MenuDish): boolean {
   return minutesOf(dish) <= 20;
 }
 
-function dishText(dish) {
+function dishText(dish: MenuDish): string {
   return [
     dish.name,
     dish.slug,
@@ -27,14 +66,17 @@ function dishText(dish) {
     .toLowerCase();
 }
 
-function compareDishes(a, b) {
+function compareDishes(a: MenuDish, b: MenuDish): number {
   if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
   if (Number(a.sortOrder) !== Number(b.sortOrder)) return Number(a.sortOrder) - Number(b.sortOrder);
   if (minutesOf(a) !== minutesOf(b)) return minutesOf(b) - minutesOf(a);
   return a.name.localeCompare(b.name, 'zh-Hans-CN');
 }
 
-function buildSectionedDishes(sections, dishes) {
+function buildSectionedDishes(
+  sections: MenuSection[],
+  dishes: MenuDish[]
+): MenuSectionWithDishes[] {
   const dishesById = new Map(dishes.map((dish) => [dish.id, dish]));
 
   return sections.map((section) => {
@@ -43,7 +85,7 @@ function buildSectionedDishes(sections, dishes) {
         ...section,
         dishes: section.dishIds
           .map((dishId) => dishesById.get(Number(dishId)))
-          .filter(Boolean),
+          .filter((dish): dish is MenuDish => dish !== undefined),
       };
     }
 
@@ -74,7 +116,7 @@ function SearchIcon() {
   );
 }
 
-function CartIcon({ className = 'h-5 w-5' }) {
+function CartIcon({ className = 'h-5 w-5' }: CartIconProps) {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className={className}>
       <path
@@ -128,7 +170,7 @@ function ClockIcon() {
   );
 }
 
-function ToggleButton({ dish, selected, onAdd, onRemove, size = 'md' }) {
+function ToggleButton({ dish, selected, onAdd, onRemove, size = 'md' }: ToggleButtonProps) {
   if (selected) {
     return (
       <button
@@ -156,7 +198,7 @@ function ToggleButton({ dish, selected, onAdd, onRemove, size = 'md' }) {
   );
 }
 
-function DishRow({ dish, selected, priority, onAdd, onRemove, hrefWithSession }) {
+function DishRow({ dish, selected, priority, onAdd, onRemove, hrefWithSession }: DishRowProps) {
   return (
     <article className={`dish-row ${selected ? 'dish-row-selected' : ''}`}>
       <Link
@@ -208,7 +250,7 @@ function DishRow({ dish, selected, priority, onAdd, onRemove, hrefWithSession })
 
 const MemoDishRow = memo(DishRow);
 
-function OrderRail({ cartItems, totalItems, onRemove, hrefWithSession }) {
+function OrderRail({ cartItems, totalItems, onRemove, hrefWithSession }: OrderRailProps) {
   return (
     <aside className="order-rail">
       <header className="rail-head">
@@ -255,22 +297,22 @@ function OrderRail({ cartItems, totalItems, onRemove, hrefWithSession }) {
 export default function DishList() {
   const { settings, dishes, sections } = useMenu();
   const { addToCart, removeFromCart, cartItems, getTotalItems, hrefWithSession } = useCart();
-  const [query, setQuery] = useState('');
-  const [activeSection, setActiveSection] = useState('recommend');
-  const sectionRefs = useRef(new Map());
-  const scrollLockRef = useRef(0);
+  const [query, setQuery] = useState<string>('');
+  const [activeSection, setActiveSection] = useState<string>('recommend');
+  const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const scrollLockRef = useRef<number>(0);
 
   const totalItems = getTotalItems();
   const sectionedDishes = useMemo(() => buildSectionedDishes(sections, dishes), [dishes, sections]);
 
-  const selectedIds = useMemo(
+  const selectedIds = useMemo<Set<number>>(
     () => new Set(cartItems.map((item) => item.id)),
     [cartItems]
   );
 
   const searching = query.trim().length > 0;
 
-  const searchResults = useMemo(() => {
+  const searchResults = useMemo<MenuDish[]>(() => {
     if (!searching) return [];
     const cleanQuery = query.trim().toLowerCase();
     return dishes.filter((dish) => dishText(dish).includes(cleanQuery)).sort(compareDishes);
@@ -295,7 +337,8 @@ export default function DishList() {
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
         if (visible.length) {
-          setActiveSection(visible[0].target.dataset.section);
+          const sectionId = (visible[0].target as HTMLElement).dataset.section;
+          if (sectionId) setActiveSection(sectionId);
         }
       },
       { rootMargin: '-128px 0px -55% 0px' }
@@ -308,7 +351,7 @@ export default function DishList() {
     return () => observer.disconnect();
   }, [searching, sectionedDishes]);
 
-  const jumpToSection = useCallback((sectionId) => {
+  const jumpToSection = useCallback((sectionId: string): void => {
     setQuery('');
     setActiveSection(sectionId);
     scrollLockRef.current = Date.now() + 700;
@@ -318,8 +361,8 @@ export default function DishList() {
     });
   }, []);
 
-  const handleAdd = useCallback((dish) => addToCart(dish), [addToCart]);
-  const handleRemove = useCallback((dishId) => removeFromCart(dishId), [removeFromCart]);
+  const handleAdd = useCallback((dish: MenuDish): void => addToCart(dish), [addToCart]);
+  const handleRemove = useCallback((dishId: number): void => removeFromCart(dishId), [removeFromCart]);
 
   let imageIndex = 0;
 
