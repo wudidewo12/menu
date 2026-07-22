@@ -3,11 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchMenu, saveMenuRequest, uploadDishImageRequest } from './admin-api';
 import {
+  allVisibleDishIds,
   blankDish,
   blankSection,
   cleanDishIds,
+  defaultDishIdsForSource,
+  dishesForSection,
   fieldValue,
+  moveDishByDirection,
+  moveSectionByDirection,
   normalizeDishForSave,
+  sectionSourceLabel,
   splitIngredients,
 } from './admin-utils';
 
@@ -68,7 +74,7 @@ export default function AdminPage() {
   const selectedImageSrc = selectedImage.startsWith('/uploads/')
     ? `${selectedImage}?v=${imageRevisions[selectedDish?.id] || 0}`
     : selectedImage;
-  const activeSectionDishes = activeSection ? dishesForSection(activeSection) : [];
+  const activeSectionDishes = activeSection ? dishesForSection(activeSection, dishes) : [];
   const activeSectionDishIds = new Set(activeSectionDishes.map((dish) => dish.id));
   const activeSectionAddableDishes = [...dishes]
     .filter((dish) => dish.visible !== false && !activeSectionDishIds.has(dish.id))
@@ -87,52 +93,8 @@ export default function AdminPage() {
     };
   }, [draggedSectionDish]);
 
-  function sectionSourceLabel(section) {
-    return section.recommendedOnly ? '推荐菜' : section.category || '未设置来源';
-  }
-
-  function automaticDishesForSection(section, nextDishes = dishes) {
-    return [...nextDishes]
-      .filter((dish) => {
-        if (dish.visible === false) return false;
-        if (section.recommendedOnly) return Boolean(dish.recommended);
-        return dish.category === section.category;
-      })
-      .sort((a, b) => Number(a.sortOrder) - Number(b.sortOrder) || Number(a.id) - Number(b.id));
-  }
-
-  function dishesForSection(section) {
-    if (Array.isArray(section.dishIds)) {
-      const byId = new Map(
-        dishes
-          .filter((dish) => dish.visible !== false)
-          .map((dish) => [dish.id, dish]),
-      );
-      return cleanDishIds(section.dishIds)
-        .map((dishId) => byId.get(dishId))
-        .filter(Boolean);
-    }
-
-    return automaticDishesForSection(section);
-  }
-
-  function defaultDishIdsForSource(value) {
-    const nextSection = {
-      recommendedOnly: value === '__recommended__',
-      category: value === '__recommended__' ? null : value,
-    };
-    return automaticDishesForSection(nextSection).map((dish) => dish.id);
-  }
-
   function dishIdsForSection(section) {
-    return dishesForSection(section).map((dish) => dish.id);
-  }
-
-  function allVisibleDishIds() {
-    return [...dishes]
-      .filter((dish) => dish.visible !== false)
-      .sort((a, b) => Number(a.sortOrder) - Number(b.sortOrder) || Number(a.id) - Number(b.id))
-      .map((dish) => dish.id);
+    return dishesForSection(section, dishes).map((dish) => dish.id);
   }
 
   function updateMenu(updater) {
@@ -153,12 +115,7 @@ export default function AdminPage() {
 
   function moveDish(id, direction) {
     updateMenu((nextMenu) => {
-      const sorted = [...nextMenu.dishes].sort((a, b) => a.sortOrder - b.sortOrder);
-      const index = sorted.findIndex((dish) => dish.id === id);
-      const targetIndex = index + direction;
-      if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) return;
-      [sorted[index], sorted[targetIndex]] = [sorted[targetIndex], sorted[index]];
-      nextMenu.dishes = sorted.map((dish, nextIndex) => ({ ...dish, sortOrder: nextIndex + 1 }));
+      nextMenu.dishes = moveDishByDirection(nextMenu.dishes, id, direction);
     });
   }
 
@@ -203,15 +160,11 @@ export default function AdminPage() {
 
   function moveSection(id, direction) {
     updateMenu((nextMenu) => {
-      const sorted = [...nextMenu.settings.sections].sort((a, b) => a.sortOrder - b.sortOrder);
-      const index = sorted.findIndex((section) => section.id === id);
-      const targetIndex = index + direction;
-      if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) return;
-      [sorted[index], sorted[targetIndex]] = [sorted[targetIndex], sorted[index]];
-      nextMenu.settings.sections = sorted.map((section, nextIndex) => ({
-        ...section,
-        sortOrder: nextIndex + 1,
-      }));
+      nextMenu.settings.sections = moveSectionByDirection(
+        nextMenu.settings.sections,
+        id,
+        direction,
+      );
     });
   }
 
@@ -219,12 +172,12 @@ export default function AdminPage() {
     updateSection(id, {
       recommendedOnly: value === '__recommended__',
       category: value === '__recommended__' ? null : value,
-      dishIds: defaultDishIdsForSource(value),
+      dishIds: defaultDishIdsForSource(value, dishes),
     });
   }
 
   function setSectionDishIds(sectionId, ids) {
-    const allowedIds = new Set(allVisibleDishIds());
+    const allowedIds = new Set(allVisibleDishIds(dishes));
     updateSection(sectionId, {
       dishIds: cleanDishIds(ids).filter((dishId) => allowedIds.has(dishId)),
     });
@@ -549,7 +502,7 @@ export default function AdminPage() {
                 </div>
                 <div className="admin-section-nav-list">
                   {sortedSections.map((section) => {
-                    const sectionDishes = dishesForSection(section);
+                    const sectionDishes = dishesForSection(section, dishes);
                     return (
                       <button
                         key={section.id}

@@ -2,6 +2,27 @@ import type { MenuDish } from '@/types/dish';
 import type { MenuSection } from '@/types/menu';
 
 const fallbackDishImage = '/images/dishes/default-dish.png';
+type MenuSectionSource = Pick<MenuSection, 'recommendedOnly' | 'category'>;
+export type MoveDirection = -1 | 1;
+
+function moveSortedItem<T extends { sortOrder: number }>(
+  items: T[],
+  isTarget: (item: T) => boolean,
+  direction: MoveDirection,
+): T[] {
+  const sorted = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
+  const index = sorted.findIndex(isTarget);
+  const targetIndex = index + direction;
+
+  if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) return items;
+
+  [sorted[index], sorted[targetIndex]] = [sorted[targetIndex], sorted[index]];
+
+  return sorted.map((item, nextIndex) => ({
+    ...item,
+    sortOrder: nextIndex + 1,
+  }));
+}
 
 export function blankSection(index: number): MenuSection {
   return {
@@ -73,4 +94,69 @@ export function cleanDishIds(ids: unknown): number[] {
       seen.add(id);
       return true;
     });
+}
+
+export function sectionSourceLabel(section: MenuSection): string {
+  return section.recommendedOnly ? '推荐菜' : section.category || '未设置来源';
+}
+
+export function automaticDishesForSection(
+  section: MenuSectionSource,
+  dishes: MenuDish[],
+): MenuDish[] {
+  return [...dishes]
+    .filter((dish) => {
+      if (dish.visible === false) return false;
+      if (section.recommendedOnly) return Boolean(dish.recommended);
+      return dish.category === section.category;
+    })
+    .sort((a, b) => Number(a.sortOrder) - Number(b.sortOrder) || Number(a.id) - Number(b.id));
+}
+
+export function dishesForSection(section: MenuSection, dishes: MenuDish[]): MenuDish[] {
+  if (Array.isArray(section.dishIds)) {
+    const byId = new Map(
+      dishes
+        .filter((dish) => dish.visible !== false)
+        .map((dish) => [dish.id, dish]),
+    );
+
+    return cleanDishIds(section.dishIds)
+      .map((dishId) => byId.get(dishId))
+      .filter((dish): dish is MenuDish => Boolean(dish));
+  }
+
+  return automaticDishesForSection(section, dishes);
+}
+
+export function defaultDishIdsForSource(value: string, dishes: MenuDish[]): number[] {
+  const sectionSource: MenuSectionSource = {
+    recommendedOnly: value === '__recommended__',
+    category: value === '__recommended__' ? null : value,
+  };
+
+  return automaticDishesForSection(sectionSource, dishes).map((dish) => dish.id);
+}
+
+export function allVisibleDishIds(dishes: MenuDish[]): number[] {
+  return [...dishes]
+    .filter((dish) => dish.visible !== false)
+    .sort((a, b) => Number(a.sortOrder) - Number(b.sortOrder) || Number(a.id) - Number(b.id))
+    .map((dish) => dish.id);
+}
+
+export function moveDishByDirection(
+  dishes: MenuDish[],
+  id: number,
+  direction: MoveDirection,
+): MenuDish[] {
+  return moveSortedItem(dishes, (dish) => dish.id === id, direction);
+}
+
+export function moveSectionByDirection(
+  sections: MenuSection[],
+  id: string,
+  direction: MoveDirection,
+): MenuSection[] {
+  return moveSortedItem(sections, (section) => section.id === id, direction);
 }
