@@ -1,72 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-
-const blankSection = (index) => ({
-  id: `section-${Date.now()}`,
-  label: '新分类',
-  title: '新分类',
-  note: '',
-  category: '肉菜',
-  recommendedOnly: false,
-  dishIds: [],
-  sortOrder: index + 1,
-});
-
-const blankDish = (id, sortOrder) => ({
-  id,
-  name: '新菜',
-  slug: `dish-${id}`,
-  description: '',
-  date: '今晚菜单',
-  prepTime: '30分钟',
-  category: '肉菜',
-  accent: '',
-  difficulty: '简单',
-  recommended: false,
-  servings: '2-3人份',
-  image: '/images/dishes/default-dish.png',
-  images: ['/images/dishes/default-dish.png'],
-  ingredients: [],
-  visible: true,
-  sortOrder,
-});
-
-function splitIngredients(value) {
-  return value
-    .split(/\n|,|，/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function normalizeDishForSave(dish) {
-  const image = dish.image || '/images/dishes/default-dish.png';
-  return {
-    ...dish,
-    id: Number(dish.id),
-    sortOrder: Number(dish.sortOrder) || 999,
-    recommended: Boolean(dish.recommended),
-    visible: dish.visible !== false,
-    image,
-    images: Array.isArray(dish.images) && dish.images.length ? dish.images : [image],
-    ingredients: Array.isArray(dish.ingredients) ? dish.ingredients : [],
-  };
-}
-
-function fieldValue(value) {
-  return value ?? '';
-}
-
-function cleanDishIds(ids) {
-  const seen = new Set();
-  return (Array.isArray(ids) ? ids : [])
-    .map(Number)
-    .filter((id) => {
-      if (!Number.isFinite(id) || seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
-}
+import { fetchMenu, saveMenuRequest, uploadDishImageRequest } from './admin-api';
+import {
+  blankDish,
+  blankSection,
+  cleanDishIds,
+  fieldValue,
+  normalizeDishForSave,
+  splitIngredients,
+} from './admin-utils';
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -88,11 +31,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/menu', { cache: 'no-store' })
-      .then((response) => {
-        if (!response.ok) throw new Error(`菜单 API 返回 ${response.status}`);
-        return response.json();
-      })
+    fetchMenu()
       .then((nextMenu) => {
         setMenu(nextMenu);
         setSelectedId(nextMenu.dishes?.[0]?.id ?? null);
@@ -359,21 +298,7 @@ export default function AdminPage() {
     };
 
     try {
-      const response = await fetch('/api/menu', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Password': adminPassword,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) throw new Error('管理密码不对');
-        throw new Error(`保存失败：${response.status}`);
-      }
-
-      const savedMenu = await response.json();
+      const savedMenu = await saveMenuRequest(payload, adminPassword);
       setMenu(savedMenu);
       setSavedPassword(adminPassword);
       window.sessionStorage.setItem('menu.adminPassword', adminPassword);
@@ -383,15 +308,6 @@ export default function AdminPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function readFileAsDataUrl(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(new Error('读取图片失败'));
-      reader.readAsDataURL(file);
-    });
   }
 
   async function uploadDishImage(file) {
@@ -413,28 +329,7 @@ export default function AdminPage() {
     setMessage('');
 
     try {
-      const data = await readFileAsDataUrl(file);
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Password': adminPassword,
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          dishId: selectedDish.id,
-          data,
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) throw new Error('管理密码不对');
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error || `上传失败：${response.status}`);
-      }
-
-      const payload = await response.json();
+      const payload = await uploadDishImageRequest(file, selectedDish.id, adminPassword);
       updateDish(selectedDish.id, { image: payload.url, images: [payload.url] });
       setImageRevisions((revisions) => ({ ...revisions, [selectedDish.id]: Date.now() }));
       setSavedPassword(adminPassword);
