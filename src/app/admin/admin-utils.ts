@@ -5,6 +5,11 @@ const fallbackDishImage = '/images/dishes/default-dish.png';
 type MenuSectionSource = Pick<MenuSection, 'recommendedOnly' | 'category'>;
 export type MoveDirection = -1 | 1;
 
+interface DishRemovalResult {
+  dishes: MenuDish[];
+  sections: MenuSection[];
+}
+
 function moveSortedItem<T extends { sortOrder: number }>(
   items: T[],
   isTarget: (item: T) => boolean,
@@ -159,4 +164,43 @@ export function moveSectionByDirection(
   direction: MoveDirection,
 ): MenuSection[] {
   return moveSortedItem(sections, (section) => section.id === id, direction);
+}
+
+export function removeDishFromMenu(
+  dishes: MenuDish[],
+  sections: MenuSection[],
+  id: number,
+): DishRemovalResult {
+  return {
+    dishes: dishes
+      .filter((dish) => dish.id !== id)
+      .map((dish, index) => ({ ...dish, sortOrder: index + 1 })),
+    sections: sections.map((section) => ({
+      ...section,
+      dishIds: Array.isArray(section.dishIds)
+        ? cleanDishIds(section.dishIds).filter((dishId) => dishId !== id)
+        : section.dishIds,
+    })),
+  };
+}
+
+export function removeSectionById(sections: MenuSection[], id: string): MenuSection[] {
+  return sections.filter((section) => section.id !== id);
+}
+
+export function reorderDishIds(
+  dishIds: number[],
+  sourceDishId: number,
+  targetDishId: number,
+): number[] | null {
+  const nextDishIds = [...dishIds];
+  const sourceIndex = nextDishIds.indexOf(sourceDishId);
+  const targetIndex = nextDishIds.indexOf(targetDishId);
+
+  if (sourceIndex < 0 || targetIndex < 0 || sourceDishId === targetDishId) return null;
+
+  const [movedDishId] = nextDishIds.splice(sourceIndex, 1);
+  nextDishIds.splice(targetIndex, 0, movedDishId);
+
+  return nextDishIds;
 }

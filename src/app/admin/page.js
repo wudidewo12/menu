@@ -13,6 +13,9 @@ import {
   moveDishByDirection,
   moveSectionByDirection,
   normalizeDishForSave,
+  reorderDishIds,
+  removeDishFromMenu,
+  removeSectionById,
   sectionSourceLabel,
   splitIngredients,
 } from './admin-utils';
@@ -130,14 +133,13 @@ export default function AdminPage() {
 
   function removeDish(id) {
     updateMenu((nextMenu) => {
-      nextMenu.dishes = nextMenu.dishes.filter((dish) => dish.id !== id)
-        .map((dish, index) => ({ ...dish, sortOrder: index + 1 }));
-      nextMenu.settings.sections = nextMenu.settings.sections.map((section) => ({
-        ...section,
-        dishIds: Array.isArray(section.dishIds)
-          ? cleanDishIds(section.dishIds).filter((dishId) => dishId !== id)
-          : section.dishIds,
-      }));
+      const result = removeDishFromMenu(
+        nextMenu.dishes,
+        nextMenu.settings.sections,
+        id,
+      );
+      nextMenu.dishes = result.dishes;
+      nextMenu.settings.sections = result.sections;
     });
     setSelectedId(dishes.find((dish) => dish.id !== id)?.id ?? null);
   }
@@ -218,19 +220,19 @@ export default function AdminPage() {
     if (!Number.isFinite(sourceDishId)) return;
     if (sourceDishId === targetDishId) return;
 
-    const ids = dishIdsForSection(section);
-    const sourceIndex = ids.indexOf(sourceDishId);
-    const targetIndex = ids.indexOf(targetDishId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
+    const nextDishIds = reorderDishIds(
+      dishIdsForSection(section),
+      sourceDishId,
+      targetDishId,
+    );
+    if (!nextDishIds) return;
 
-    const [sourceId] = ids.splice(sourceIndex, 1);
-    ids.splice(targetIndex, 0, sourceId);
-    setSectionDishIds(section.id, ids);
+    setSectionDishIds(section.id, nextDishIds);
   }
 
   function removeSection(id) {
     updateMenu((nextMenu) => {
-      nextMenu.settings.sections = nextMenu.settings.sections.filter((section) => section.id !== id);
+      nextMenu.settings.sections = removeSectionById(nextMenu.settings.sections, id);
     });
     if (activeSectionId === id) {
       setActiveSectionId(sortedSections.find((section) => section.id !== id)?.id ?? null);
