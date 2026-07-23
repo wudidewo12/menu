@@ -116,16 +116,20 @@ const build = packageManagerCommand();
 await run(build.command, build.args);
 
 console.log(`=> 启动菜单服务 http://localhost:${port}`);
-const server = spawn(process.execPath, ['server.js'], {
-  cwd: root,
-  stdio: 'inherit',
-  env: {
-    ...process.env,
-    PORT: port,
-    DATA_DIR: dataDir,
-    ADMIN_PASSWORD: adminPassword,
+const server = spawn(
+  process.execPath,
+  ['--import', 'tsx', '--conditions=react-server', 'server.js'],
+  {
+    cwd: root,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      PORT: port,
+      DATA_DIR: dataDir,
+      ADMIN_PASSWORD: adminPassword,
+    },
   },
-});
+);
 
 function stopServer() {
   if (!server.killed) server.kill('SIGTERM');
