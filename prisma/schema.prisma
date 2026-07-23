@@ -35,6 +35,7 @@ model Menu {
   publishedAt DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  menuDishes  MenuDish[]
 }
 
 model Dish {
@@ -53,4 +54,22 @@ model Dish {
   version     Int            @default(1)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  menuDishes  MenuDish[]
+}
+
+model MenuDish {
+  menuId      String   @db.Uuid
+  dishId      Int
+  recommended Boolean  @default(false)
+  visible     Boolean  @default(true)
+  sortOrder   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+
+  @@id([menuId, dishId])
+  @@index([menuId, visible, sortOrder])
+  @@index([dishId])
 }
