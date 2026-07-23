@@ -10,7 +10,12 @@
     "next:dev": "next dev --turbopack",
     "lint": "next lint",
     "image:replace": "node tools/ark-image-replace.mjs",
-    "image:review": "node tools/generate-dish-review-images.mjs"
+    "image:review": "node tools/generate-dish-review-images.mjs",
+    "db:config": "docker compose --env-file .env.local config --quiet",
+    "db:up": "docker compose --env-file .env.local up -d postgres",
+    "db:down": "docker compose --env-file .env.local down",
+    "db:status": "docker compose --env-file .env.local ps",
+    "db:logs": "docker compose --env-file .env.local logs -f postgres"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.0",
