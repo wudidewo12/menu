@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Prisma } from "../../generated/prisma/client";
 import { DishDifficulty } from "../../generated/prisma/enums";
 import type { Menu, MenuSection } from "../../types/menu";
 import { prisma } from "./prisma";
@@ -31,10 +32,11 @@ function formatServings(minimum: number, maximum: number) {
   return minimum === maximum ? `${minimum}人份` : `${minimum}-${maximum}人份`;
 }
 
-export async function readMenuFromDatabase(
+export async function readMenuFromDatabaseWithClient(
+  client: Prisma.TransactionClient,
   menuSlug = DEFAULT_MENU_READ_SLUG,
 ): Promise<Menu | null> {
-  const menu = await prisma.menu.findUnique({
+  const menu = await client.menu.findUnique({
     where: {
       slug: menuSlug,
     },
@@ -145,4 +147,10 @@ export async function readMenuFromDatabase(
       };
     }),
   };
+}
+
+export async function readMenuFromDatabase(
+  menuSlug = DEFAULT_MENU_READ_SLUG,
+): Promise<Menu | null> {
+  return readMenuFromDatabaseWithClient(prisma, menuSlug);
 }

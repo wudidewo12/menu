@@ -23,7 +23,11 @@ delete process.env.POSTGRES_APP_PASSWORD;
 
 const [
   { readMenuFromDatabase },
-  { createMenuWritePlan, MenuWriteValidationError },
+  {
+    createMenuWritePlan,
+    MenuVersionConflictError,
+    MenuWriteValidationError,
+  },
   { prisma },
 ] = await Promise.all([
   import("../src/server/db/menu-read.ts"),
@@ -218,9 +222,15 @@ try {
     },
   ]);
 
+  const newerCurrentMenu = copyMenu(currentMenu);
+  newerCurrentMenu.version += 1;
   const staleMenu = copyMenu(currentMenu);
-  staleMenu.version -= 1;
-  expectValidationFailure(currentMenu, staleMenu, "version 已过期");
+  assert.throws(
+    () => createMenuWritePlan(newerCurrentMenu, staleMenu),
+    (error) =>
+      error instanceof MenuVersionConflictError &&
+      error.code === "MENU_VERSION_CONFLICT",
+  );
 
   const imageMenu = copyMenu(currentMenu);
   imageMenu.dishes[0].image = "/uploads/not-allowed.jpg";

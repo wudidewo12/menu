@@ -29,6 +29,22 @@ export class MenuWriteValidationError extends Error {
   }
 }
 
+export class MenuVersionConflictError extends Error {
+  readonly code = "MENU_VERSION_CONFLICT";
+
+  constructor(
+    readonly submittedVersion: number,
+    readonly currentVersion: number | null,
+  ) {
+    super(
+      currentVersion === null
+        ? `Menu version conflict: submitted ${submittedVersion} is no longer current`
+        : `Menu version conflict: submitted ${submittedVersion}, current ${currentVersion}`,
+    );
+    this.name = "MenuVersionConflictError";
+  }
+}
+
 export interface ChangedDish {
   id: number;
   fields: DishField[];
@@ -418,6 +434,19 @@ function normalizeMenu(value: unknown, issues: string[]): Menu {
     issues,
   );
 
+  const sortedDishes = [...dishes].sort(
+    (left, right) =>
+      left.sortOrder - right.sortOrder || left.id - right.id,
+  );
+  const sortedSections = materializeSectionDishIds(
+    sections,
+    sortedDishes,
+    issues,
+  ).sort(
+    (left, right) =>
+      left.sortOrder - right.sortOrder || left.id.localeCompare(right.id),
+  );
+
   return {
     version: positiveInteger(input.version, "version", issues),
     updatedAt: requiredString(input.updatedAt, "updatedAt", issues),
@@ -429,9 +458,9 @@ function normalizeMenu(value: unknown, issues: string[]): Menu {
         issues,
         true,
       ),
-      sections: materializeSectionDishIds(sections, dishes, issues),
+      sections: sortedSections,
     },
-    dishes,
+    dishes: sortedDishes,
   };
 }
 
@@ -498,12 +527,6 @@ export function createMenuWritePlan(
     );
   }
 
-  if (desired.version !== current.version) {
-    desiredIssues.push(
-      `version 已过期：提交的是 ${desired.version}，数据库当前是 ${current.version}`,
-    );
-  }
-
   const currentDishesById = new Map(
     current.dishes.map((dish) => [dish.id, dish]),
   );
@@ -547,6 +570,12 @@ export function createMenuWritePlan(
 
   if (desiredIssues.length > 0) {
     throw new MenuWriteValidationError(desiredIssues);
+  }
+  if (desired.version !== current.version) {
+    throw new MenuVersionConflictError(
+      desired.version,
+      current.version,
+    );
   }
 
   const menuFields: Array<"title" | "subtitle"> = [];
