@@ -57,6 +57,7 @@ model Dish {
   updatedAt     DateTime       @updatedAt
   menuDishes    MenuDish[]
   sectionDishes SectionDish[]
+  images        DishImage[]
 }
 
 model MenuDish {
@@ -108,4 +109,22 @@ model SectionDish {
   @@id([sectionId, dishId])
   @@index([sectionId, sortOrder])
   @@index([dishId])
+}
+
+model DishImage {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  dishId     Int
+  storageKey String   @unique
+  altText    String
+  mimeType   String
+  width      Int
+  height     Int
+  byteSize   Int
+  sortOrder  Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, sortOrder])
 }
