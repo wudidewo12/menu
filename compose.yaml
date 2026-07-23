@@ -1,0 +1,27 @@
+name: menu
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: menu-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.local}
+      POSTGRES_USER: ${POSTGRES_OWNER:?Set POSTGRES_OWNER in .env.local}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?Set POSTGRES_OWNER_PASSWORD in .env.local}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - menu_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    stop_grace_period: 10s
+
+volumes:
+  menu_postgres_data:
+    name: menu_postgres_data
