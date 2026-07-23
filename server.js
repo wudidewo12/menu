@@ -13,12 +13,29 @@ const ORDERS_DIR = path.join(DATA_DIR, 'orders');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const PORT = process.env.PORT || 8081;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const MENU_READ_SOURCE = String(process.env.MENU_READ_SOURCE || 'json').trim().toLowerCase();
 const JSON_BODY_LIMIT = 2_000_000;
 const IMAGE_UPLOAD_LIMIT = 12_000_000;
+const MENU_READ_SOURCES = new Set(['json', 'database']);
 
 if (!ADMIN_PASSWORD) {
   console.error('Missing ADMIN_PASSWORD. Set it before starting the menu server.');
   process.exit(1);
+}
+
+if (!MENU_READ_SOURCES.has(MENU_READ_SOURCE)) {
+  console.error('MENU_READ_SOURCE must be either "json" or "database".');
+  process.exit(1);
+}
+
+let databaseMenuReaderPromise;
+
+function loadDatabaseMenuReader() {
+  if (!databaseMenuReaderPromise) {
+    databaseMenuReaderPromise = import('./src/server/db/menu-read.ts');
+  }
+
+  return databaseMenuReaderPromise;
 }
 
 const TYPES = {
@@ -234,6 +251,12 @@ function requireAdmin(req, res) {
   return false;
 }
 
+function requireJsonMenuWriteMode(res) {
+  if (MENU_READ_SOURCE === 'json') return true;
+  sendJson(res, 409, { error: 'DATABASE_MENU_WRITE_NOT_READY' });
+  return false;
+}
+
 function defaultMenu() {
   const seed = readJson(MENU_SEED_FILE, null);
   if (seed && Array.isArray(seed.dishes)) return seed;
@@ -318,6 +341,11 @@ function getMenu() {
   return normalizeMenu(readJson(MENU_FILE, defaultMenu()));
 }
 
+async function getDatabaseMenu() {
+  const { readMenuFromDatabase } = await loadDatabaseMenuReader();
+  return readMenuFromDatabase();
+}
+
 function saveMenu(menu) {
   const previousMenu = fs.existsSync(MENU_FILE) ? normalizeMenu(readJson(MENU_FILE, defaultMenu())) : normalizeMenu(defaultMenu());
   const normalized = normalizeMenu({
@@ -392,12 +420,31 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/menu' && req.method === 'GET') {
-    sendJson(res, 200, getMenu());
+    if (MENU_READ_SOURCE === 'json') {
+      sendJson(res, 200, getMenu());
+      return true;
+    }
+
+    try {
+      const menu = await getDatabaseMenu();
+
+      if (!menu) {
+        sendJson(res, 404, { error: 'MENU_NOT_FOUND' });
+        return true;
+      }
+
+      sendJson(res, 200, menu);
+    } catch (error) {
+      const errorCode = error && typeof error.code === 'string' ? ` (${error.code})` : '';
+      console.error(`Database menu read failed${errorCode}.`);
+      sendJson(res, 503, { error: 'DATABASE_MENU_UNAVAILABLE' });
+    }
     return true;
   }
 
   if (pathname === '/api/menu' && req.method === 'PUT') {
     if (!requireAdmin(req, res)) return true;
+    if (!requireJsonMenuWriteMode(res)) return true;
     try {
       const body = await readBody(req);
       sendJson(res, 200, saveMenu(body));
@@ -409,6 +456,7 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/upload' && req.method === 'POST') {
     if (!requireAdmin(req, res)) return true;
+    if (!requireJsonMenuWriteMode(res)) return true;
     try {
       const body = await readBody(req, Math.ceil(IMAGE_UPLOAD_LIMIT * 1.5));
       sendJson(res, 200, saveImageUpload(body));
@@ -549,5 +597,7 @@ server.listen(PORT, () => {
   ensureDir(DATA_DIR);
   ensureDir(ORDERS_DIR);
   ensureDir(UPLOADS_DIR);
-  console.log(`menu server running on port ${PORT} (static=${ROOT}, data=${DATA_DIR})`);
+  console.log(
+    `menu server running on port ${PORT} (static=${ROOT}, data=${DATA_DIR}, menu=${MENU_READ_SOURCE})`,
+  );
 });
