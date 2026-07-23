@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node tools/sync-menu-seed.mjs",
+    "prebuild": "pnpm db:generate && node tools/sync-menu-seed.mjs",
     "dev": "node tools/dev-server.mjs",
     "build": "next build",
     "start": "node server.js",
@@ -17,7 +17,8 @@
     "db:status": "docker compose --env-file .env.local ps",
     "db:logs": "docker compose --env-file .env.local logs -f postgres",
     "db:setup-role": "node tools/setup-database-role.mjs",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate --config prisma.generate.config.ts",
+    "db:check": "pnpm db:generate && tsx --conditions=react-server tools/check-database-client.mts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.0",
@@ -26,7 +27,8 @@
     "next": "15.5.21",
     "pg": "^8.22.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
