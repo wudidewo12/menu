@@ -16,7 +16,8 @@
     "db:down": "docker compose --env-file .env.local down",
     "db:status": "docker compose --env-file .env.local ps",
     "db:logs": "docker compose --env-file .env.local logs -f postgres",
-    "db:setup-role": "node tools/setup-database-role.mjs"
+    "db:setup-role": "node tools/setup-database-role.mjs",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.0",
