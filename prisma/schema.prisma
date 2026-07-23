@@ -40,22 +40,23 @@ model Menu {
 }
 
 model Dish {
-  id          Int            @id @default(autoincrement())
-  slug        String         @unique
-  name        String
-  description String
-  prepMinutes Int
-  category    String
-  accent      String?
-  difficulty  DishDifficulty @default(EASY)
-  servingsMin Int
-  servingsMax Int
-  ingredients String[]       @default([])
-  status      DishStatus     @default(DRAFT)
-  version     Int            @default(1)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  menuDishes  MenuDish[]
+  id            Int            @id @default(autoincrement())
+  slug          String         @unique
+  name          String
+  description   String
+  prepMinutes   Int
+  category      String
+  accent        String?
+  difficulty    DishDifficulty @default(EASY)
+  servingsMin   Int
+  servingsMax   Int
+  ingredients   String[]       @default([])
+  status        DishStatus     @default(DRAFT)
+  version       Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  menuDishes    MenuDish[]
+  sectionDishes SectionDish[]
 }
 
 model MenuDish {
@@ -87,8 +88,24 @@ model MenuSection {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  menu          Menu          @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  sectionDishes SectionDish[]
 
   @@unique([menuId, slug])
   @@index([menuId, visible, sortOrder])
+}
+
+model SectionDish {
+  sectionId String   @db.Uuid
+  dishId    Int
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  section MenuSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  dish    Dish        @relation(fields: [dishId], references: [id], onDelete: Restrict)
+
+  @@id([sectionId, dishId])
+  @@index([sectionId, sortOrder])
+  @@index([dishId])
 }
