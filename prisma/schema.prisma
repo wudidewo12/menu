@@ -13,6 +13,18 @@ enum MenuStatus {
   ARCHIVED
 }
 
+enum DishStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum DishDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model Menu {
   id          String     @id @default(uuid(7)) @db.Uuid
   slug        String     @unique
@@ -23,4 +35,22 @@ model Menu {
   publishedAt DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model Dish {
+  id          Int            @id @default(autoincrement())
+  slug        String         @unique
+  name        String
+  description String
+  prepMinutes Int
+  category    String
+  accent      String?
+  difficulty  DishDifficulty @default(EASY)
+  servingsMin Int
+  servingsMax Int
+  ingredients String[]       @default([])
+  status      DishStatus     @default(DRAFT)
+  version     Int            @default(1)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
