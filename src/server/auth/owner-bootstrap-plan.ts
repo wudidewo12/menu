@@ -122,7 +122,7 @@ function normalizeDisplayName(value: unknown): string {
     : "";
 }
 
-function passwordContext(
+export function initialOwnerPasswordContext(
   email: string,
   displayName: string,
 ): PasswordPolicyContext {
@@ -195,7 +195,7 @@ export function validateInitialOwnerInput(
 
   const passwordResult = validatePasswordPolicy(
     source.password,
-    passwordContext(email, displayName),
+    initialOwnerPasswordContext(email, displayName),
   );
 
   issues.push(
