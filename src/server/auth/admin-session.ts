@@ -6,15 +6,17 @@ import {
 } from "../../generated/prisma/enums";
 import { prisma } from "../db/prisma";
 import {
+  ADMIN_SESSION_SETTINGS,
+} from "./admin-session-settings";
+import {
   InvalidSessionTokenError,
   createSessionToken,
   hashSessionToken,
 } from "./session-token";
 
-export const ADMIN_SESSION_SETTINGS = Object.freeze({
-  absoluteLifetimeHours: 8,
-  absoluteLifetimeMs: 8 * 60 * 60 * 1_000,
-});
+export {
+  ADMIN_SESSION_SETTINGS,
+} from "./admin-session-settings";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
