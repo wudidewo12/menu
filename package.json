@@ -18,6 +18,7 @@
     "auth:check-session-cookie": "tsx --conditions=react-server tools/check-admin-session-cookie.mts",
     "auth:check-request-origin": "tsx --conditions=react-server tools/check-request-origin.mts",
     "auth:check-login-api": "pnpm db:generate && tsx --conditions=react-server tools/check-admin-login-api.mts",
+    "auth:check-permission": "tsx --conditions=react-server tools/check-admin-permission.mts",
     "prebuild": "pnpm db:generate && node tools/sync-menu-seed.mjs",
     "dev": "node tools/dev-server.mjs",
     "build": "next build",
