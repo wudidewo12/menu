@@ -24,7 +24,8 @@
     "db:check-menu-read": "pnpm db:generate && tsx --conditions=react-server tools/check-database-menu-read.mts",
     "db:preview-menu-save": "pnpm db:generate && tsx --conditions=react-server tools/preview-database-menu-save.mts",
     "db:check-menu-write-rollback": "pnpm db:generate && tsx --conditions=react-server tools/check-database-menu-write-rollback.mts",
-    "db:check-menu-write-commit": "pnpm db:generate && tsx --conditions=react-server tools/check-database-menu-write-commit.mts"
+    "db:check-menu-write-commit": "pnpm db:generate && tsx --conditions=react-server tools/check-database-menu-write-commit.mts",
+    "db:check-menu-api-write": "pnpm build && tsx --conditions=react-server tools/check-menu-api-write.mts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.0",
@@ -50,6 +51,7 @@
   },
   "pnpm": {
     "overrides": {
+      "find-my-way": "9.7.0",
       "postcss": "8.5.15",
       "next>sharp": "-"
     }

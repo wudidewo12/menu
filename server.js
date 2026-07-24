@@ -29,6 +29,7 @@ if (!MENU_READ_SOURCES.has(MENU_READ_SOURCE)) {
 }
 
 let databaseMenuReaderPromise;
+let databaseMenuWriterPromise;
 
 function loadDatabaseMenuReader() {
   if (!databaseMenuReaderPromise) {
@@ -36,6 +37,14 @@ function loadDatabaseMenuReader() {
   }
 
   return databaseMenuReaderPromise;
+}
+
+function loadDatabaseMenuWriter() {
+  if (!databaseMenuWriterPromise) {
+    databaseMenuWriterPromise = import('./src/server/db/menu-write.ts');
+  }
+
+  return databaseMenuWriterPromise;
 }
 
 const TYPES = {
@@ -251,10 +260,30 @@ function requireAdmin(req, res) {
   return false;
 }
 
-function requireJsonMenuWriteMode(res) {
+function requireJsonImageUploadMode(res) {
   if (MENU_READ_SOURCE === 'json') return true;
   sendJson(res, 409, { error: 'DATABASE_MENU_WRITE_NOT_READY' });
   return false;
+}
+
+function sendDatabaseMenuWriteError(res, error) {
+  const errorCode = error && typeof error.code === 'string' ? error.code : '';
+  const knownErrors = {
+    MENU_WRITE_VALIDATION_FAILED: 400,
+    MENU_VERSION_CONFLICT: 409,
+    DISH_ID_CONFLICT: 409,
+    MENU_NOT_FOUND: 404,
+  };
+  const status = knownErrors[errorCode];
+
+  if (status) {
+    sendJson(res, status, { error: errorCode });
+    return;
+  }
+
+  const safeLogCode = errorCode ? ` (${errorCode})` : '';
+  console.error(`Database menu write failed${safeLogCode}.`);
+  sendJson(res, 503, { error: 'DATABASE_MENU_UNAVAILABLE' });
 }
 
 function defaultMenu() {
@@ -344,6 +373,12 @@ function getMenu() {
 async function getDatabaseMenu() {
   const { readMenuFromDatabase } = await loadDatabaseMenuReader();
   return readMenuFromDatabase();
+}
+
+async function saveDatabaseMenu(menu) {
+  const { writeMenuToDatabase } = await loadDatabaseMenuWriter();
+  const result = await writeMenuToDatabase(menu);
+  return result.menu;
 }
 
 function saveMenu(menu) {
@@ -444,19 +479,36 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/menu' && req.method === 'PUT') {
     if (!requireAdmin(req, res)) return true;
-    if (!requireJsonMenuWriteMode(res)) return true;
+
+    if (MENU_READ_SOURCE === 'json') {
+      try {
+        const body = await readBody(req);
+        sendJson(res, 200, saveMenu(body));
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+      }
+      return true;
+    }
+
+    let body;
     try {
-      const body = await readBody(req);
-      sendJson(res, 200, saveMenu(body));
+      body = await readBody(req);
+    } catch {
+      sendJson(res, 400, { error: 'INVALID_REQUEST_BODY' });
+      return true;
+    }
+
+    try {
+      sendJson(res, 200, await saveDatabaseMenu(body));
     } catch (error) {
-      sendJson(res, 400, { error: error.message });
+      sendDatabaseMenuWriteError(res, error);
     }
     return true;
   }
 
   if (pathname === '/api/upload' && req.method === 'POST') {
     if (!requireAdmin(req, res)) return true;
-    if (!requireJsonMenuWriteMode(res)) return true;
+    if (!requireJsonImageUploadMode(res)) return true;
     try {
       const body = await readBody(req, Math.ceil(IMAGE_UPLOAD_LIMIT * 1.5));
       sendJson(res, 200, saveImageUpload(body));
