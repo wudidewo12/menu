@@ -12,6 +12,7 @@
     "auth:commit-owner": "tsx --conditions=react-server tools/commit-owner-bootstrap.mts --commit",
     "auth:check-owner-commit": "pnpm db:generate && tsx --conditions=react-server tools/check-owner-bootstrap-commit.mts",
     "auth:check-session-token": "tsx --conditions=react-server tools/check-session-token.mts",
+    "auth:check-session-db": "pnpm db:generate && tsx --conditions=react-server tools/check-admin-session-service-rollback.mts",
     "prebuild": "pnpm db:generate && node tools/sync-menu-seed.mjs",
     "dev": "node tools/dev-server.mjs",
     "build": "next build",
