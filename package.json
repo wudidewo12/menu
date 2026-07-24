@@ -7,6 +7,8 @@
     "auth:check-password-policy": "tsx --conditions=react-server tools/check-password-policy.mts",
     "auth:check-owner-bootstrap-plan": "tsx --conditions=react-server tools/check-owner-bootstrap-plan.mts",
     "auth:check-owner-bootstrap-write": "pnpm db:generate && tsx --conditions=react-server tools/check-owner-bootstrap-write-rollback.mts",
+    "auth:preview-owner": "tsx --conditions=react-server tools/preview-owner-bootstrap.mts",
+    "auth:check-owner-preview": "tsx --conditions=react-server tools/check-owner-bootstrap-preview.mts",
     "prebuild": "pnpm db:generate && node tools/sync-menu-seed.mjs",
     "dev": "node tools/dev-server.mjs",
     "build": "next build",
