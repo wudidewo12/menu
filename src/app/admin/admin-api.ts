@@ -9,6 +9,12 @@ export interface DishImageUploadResponse {
   filename: string;
   linked: boolean;
   size: number;
+  mimeType?: string;
+  width?: number;
+  height?: number;
+  storageKey?: string;
+  oldFileCleanupPending?: boolean;
+  menu?: Menu;
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -54,6 +60,7 @@ export async function saveMenuRequest(menu: Menu, adminPassword: string): Promis
 export async function uploadDishImageRequest(
   file: File,
   dishId: number,
+  menuVersion: number,
   adminPassword: string,
 ): Promise<DishImageUploadResponse> {
   const data = await readFileAsDataUrl(file);
@@ -67,6 +74,7 @@ export async function uploadDishImageRequest(
       filename: file.name,
       contentType: file.type,
       dishId,
+      menuVersion,
       data,
     }),
   });
@@ -77,6 +85,19 @@ export async function uploadDishImageRequest(
     }
 
     const payload = await response.json().catch(() => ({})) as ApiErrorResponse;
+
+    if (response.status === 409 && payload.error === 'MENU_VERSION_CONFLICT') {
+      throw new Error('菜单已经被其他操作更新，请刷新后再上传图片。');
+    }
+
+    if (response.status === 404 && payload.error === 'DISH_NOT_IN_MENU') {
+      throw new Error('菜品已不在当前菜单中，请刷新页面。');
+    }
+
+    if (response.status === 503) {
+      throw new Error('图片服务暂时不可用，请稍后再试。');
+    }
+
     throw new Error(payload.error || `上传失败：${response.status}`);
   }
 

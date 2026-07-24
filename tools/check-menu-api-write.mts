@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
-import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
-import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
@@ -15,6 +13,12 @@ import {
   type MenuDatabaseSnapshot,
 } from "./database-menu-test-state.mts";
 import { createMenuWriteScenario } from "./database-menu-write-scenario.mts";
+import {
+  apiRequest,
+  type RunningServer,
+  startServer,
+  stopServer,
+} from "./menu-api-test-client.mts";
 
 const localEnvironment = dotenv.parse(fs.readFileSync(".env.local"));
 const databaseUrl = localEnvironment.DATABASE_URL;
@@ -36,164 +40,6 @@ const [{ readMenuFromDatabase }, { prisma }] = await Promise.all([
   import("../src/server/db/menu-read.ts"),
   import("../src/server/db/prisma.ts"),
 ]);
-
-interface ApiResponse {
-  status: number;
-  payload: Record<string, unknown>;
-}
-
-interface RunningServer {
-  baseUrl: string;
-  process: ChildProcess;
-}
-
-function getFreePort() {
-  return new Promise<number>((resolve, reject) => {
-    const server = net.createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      if (!address || typeof address === "string") {
-        server.close();
-        reject(new Error("Could not allocate a local test port"));
-        return;
-      }
-
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(address.port);
-      });
-    });
-  });
-}
-
-async function waitForHealth(baseUrl: string, process: ChildProcess) {
-  const deadline = Date.now() + 10_000;
-
-  while (Date.now() < deadline) {
-    if (process.exitCode !== null) {
-      throw new Error(`Menu server exited early with code ${process.exitCode}`);
-    }
-
-    try {
-      const response = await fetch(`${baseUrl}/api/health`);
-      if (response.status === 200) {
-        return;
-      }
-    } catch {
-      // The server is still starting.
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-
-  throw new Error("Timed out waiting for the isolated menu server");
-}
-
-async function startServer(
-  menuSource: "json" | "database",
-  adminPassword: string,
-  dataDirectory: string,
-  databaseConnection = databaseUrl,
-): Promise<RunningServer> {
-  const port = await getFreePort();
-  const childEnvironment = {
-    ...process.env,
-    ADMIN_PASSWORD: adminPassword,
-    DATA_DIR: dataDirectory,
-    MENU_READ_SOURCE: menuSource,
-    PORT: String(port),
-  };
-
-  if (menuSource === "json") {
-    delete childEnvironment.DATABASE_URL;
-    delete childEnvironment.POSTGRES_APP_USER;
-  } else {
-    childEnvironment.DATABASE_URL = databaseConnection;
-    childEnvironment.POSTGRES_APP_USER = applicationRole;
-  }
-
-  delete childEnvironment.DATABASE_ADMIN_URL;
-  delete childEnvironment.POSTGRES_OWNER;
-  delete childEnvironment.POSTGRES_OWNER_PASSWORD;
-  delete childEnvironment.POSTGRES_APP_PASSWORD;
-
-  const child = spawn(
-    process.execPath,
-    [
-      "--import",
-      "tsx",
-      "--conditions=react-server",
-      "server.js",
-    ],
-    {
-      cwd: process.cwd(),
-      env: childEnvironment,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-
-  await waitForHealth(baseUrl, child);
-  return {
-    baseUrl,
-    process: child,
-  };
-}
-
-async function stopServer(server: RunningServer | null) {
-  if (!server || server.process.exitCode !== null) {
-    return;
-  }
-
-  await new Promise<void>((resolve) => {
-    const timeout = setTimeout(() => {
-      server.process.kill("SIGKILL");
-    }, 5_000);
-
-    server.process.once("exit", () => {
-      clearTimeout(timeout);
-      resolve();
-    });
-    server.process.kill("SIGTERM");
-  });
-}
-
-async function apiRequest(
-  baseUrl: string,
-  pathname: string,
-  options: {
-    method?: string;
-    password?: string;
-    body?: unknown;
-    rawBody?: string;
-  } = {},
-): Promise<ApiResponse> {
-  const headers: Record<string, string> = {};
-  if (options.password) {
-    headers["X-Admin-Password"] = options.password;
-  }
-  if (options.body !== undefined || options.rawBody !== undefined) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const response = await fetch(`${baseUrl}${pathname}`, {
-    method: options.method ?? "GET",
-    headers,
-    body:
-      options.rawBody ??
-      (options.body === undefined ? undefined : JSON.stringify(options.body)),
-  });
-  const payload = (await response.json()) as Record<string, unknown>;
-
-  return {
-    status: response.status,
-    payload,
-  };
-}
 
 function addSkippedDishId(menu: Menu) {
   const desiredMenu = structuredClone(menu);
@@ -345,17 +191,6 @@ async function checkDatabaseMode(
     assert.equal(unauthorized.status, 401);
     assert.equal(unauthorized.payload.error, "ADMIN_AUTH_REQUIRED");
 
-    const uploadBlocked = await apiRequest(server.baseUrl, "/api/upload", {
-      method: "POST",
-      password: adminPassword,
-      body: {},
-    });
-    assert.equal(uploadBlocked.status, 409);
-    assert.equal(
-      uploadBlocked.payload.error,
-      "DATABASE_MENU_WRITE_NOT_READY",
-    );
-
     const invalidBody = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
       password: adminPassword,
@@ -493,7 +328,6 @@ if (topLevelError) {
 
 console.log("json mode authenticated PUT unchanged: passed");
 console.log("database mode unauthenticated PUT: 401");
-console.log("database mode image upload remains blocked: 409");
 console.log("database mode invalid body/validation: 400");
 console.log("database mode successful PUT/readback: 200");
 console.log("database mode stale version/dish id conflict: 409");

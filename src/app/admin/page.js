@@ -284,8 +284,18 @@ export default function AdminPage() {
     setMessage('');
 
     try {
-      const payload = await uploadDishImageRequest(file, selectedDish.id, adminPassword);
-      updateDish(selectedDish.id, { image: payload.url, images: [payload.url] });
+      const payload = await uploadDishImageRequest(
+        file,
+        selectedDish.id,
+        menu.version,
+        adminPassword,
+      );
+
+      if (payload.menu) {
+        setMenu(payload.menu);
+      } else {
+        updateDish(selectedDish.id, { image: payload.url, images: [payload.url] });
+      }
       setImageRevisions((revisions) => ({ ...revisions, [selectedDish.id]: Date.now() }));
       setSavedPassword(adminPassword);
       window.sessionStorage.setItem('menu.adminPassword', adminPassword);

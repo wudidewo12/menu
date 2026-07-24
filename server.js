@@ -30,6 +30,7 @@ if (!MENU_READ_SOURCES.has(MENU_READ_SOURCE)) {
 
 let databaseMenuReaderPromise;
 let databaseMenuWriterPromise;
+let databaseDishImageWriterPromise;
 
 function loadDatabaseMenuReader() {
   if (!databaseMenuReaderPromise) {
@@ -45,6 +46,14 @@ function loadDatabaseMenuWriter() {
   }
 
   return databaseMenuWriterPromise;
+}
+
+function loadDatabaseDishImageWriter() {
+  if (!databaseDishImageWriterPromise) {
+    databaseDishImageWriterPromise = import('./src/server/db/dish-image-write.ts');
+  }
+
+  return databaseDishImageWriterPromise;
 }
 
 const TYPES = {
@@ -260,12 +269,6 @@ function requireAdmin(req, res) {
   return false;
 }
 
-function requireJsonImageUploadMode(res) {
-  if (MENU_READ_SOURCE === 'json') return true;
-  sendJson(res, 409, { error: 'DATABASE_MENU_WRITE_NOT_READY' });
-  return false;
-}
-
 function sendDatabaseMenuWriteError(res, error) {
   const errorCode = error && typeof error.code === 'string' ? error.code : '';
   const knownErrors = {
@@ -284,6 +287,26 @@ function sendDatabaseMenuWriteError(res, error) {
   const safeLogCode = errorCode ? ` (${errorCode})` : '';
   console.error(`Database menu write failed${safeLogCode}.`);
   sendJson(res, 503, { error: 'DATABASE_MENU_UNAVAILABLE' });
+}
+
+function sendDatabaseDishImageWriteError(res, error) {
+  const errorCode = error && typeof error.code === 'string' ? error.code : '';
+  const knownErrors = {
+    DISH_IMAGE_VALIDATION_FAILED: 400,
+    MENU_VERSION_CONFLICT: 409,
+    DISH_NOT_IN_MENU: 404,
+    MENU_NOT_FOUND: 404,
+  };
+  const status = knownErrors[errorCode];
+
+  if (status) {
+    sendJson(res, status, { error: errorCode });
+    return;
+  }
+
+  const safeLogCode = errorCode ? ` (${errorCode})` : '';
+  console.error(`Database dish image write failed${safeLogCode}.`);
+  sendJson(res, 503, { error: 'DATABASE_IMAGE_UPLOAD_UNAVAILABLE' });
 }
 
 function defaultMenu() {
@@ -379,6 +402,34 @@ async function saveDatabaseMenu(menu) {
   const { writeMenuToDatabase } = await loadDatabaseMenuWriter();
   const result = await writeMenuToDatabase(menu);
   return result.menu;
+}
+
+async function saveDatabaseDishImage(body, buffer) {
+  const { writeDishImageToDatabase } = await loadDatabaseDishImageWriter();
+  const result = await writeDishImageToDatabase(
+    {
+      dishId: body.dishId,
+      menuVersion: body.menuVersion,
+      contentType: body.contentType,
+      buffer,
+    },
+    {
+      uploadsDirectory: UPLOADS_DIR,
+    },
+  );
+
+  return {
+    url: result.image.url,
+    filename: result.image.filename,
+    linked: true,
+    size: result.image.byteSize,
+    mimeType: result.image.mimeType,
+    width: result.image.width,
+    height: result.image.height,
+    storageKey: result.image.storageKey,
+    oldFileCleanupPending: result.oldFileCleanupPending,
+    menu: result.menu,
+  };
 }
 
 function saveMenu(menu) {
@@ -508,12 +559,41 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/upload' && req.method === 'POST') {
     if (!requireAdmin(req, res)) return true;
-    if (!requireJsonImageUploadMode(res)) return true;
+
+    if (MENU_READ_SOURCE === 'json') {
+      try {
+        const body = await readBody(req, Math.ceil(IMAGE_UPLOAD_LIMIT * 1.5));
+        sendJson(res, 200, saveImageUpload(body));
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+      }
+      return true;
+    }
+
+    let body;
     try {
-      const body = await readBody(req, Math.ceil(IMAGE_UPLOAD_LIMIT * 1.5));
-      sendJson(res, 200, saveImageUpload(body));
+      body = await readBody(req, Math.ceil(IMAGE_UPLOAD_LIMIT * 1.5));
+    } catch {
+      sendJson(res, 400, { error: 'INVALID_REQUEST_BODY' });
+      return true;
+    }
+
+    let decodedImage;
+    try {
+      decodedImage = decodeImageUpload(body);
+    } catch {
+      sendJson(res, 400, { error: 'DISH_IMAGE_VALIDATION_FAILED' });
+      return true;
+    }
+
+    try {
+      sendJson(
+        res,
+        200,
+        await saveDatabaseDishImage(body, decodedImage.buffer),
+      );
     } catch (error) {
-      sendJson(res, 400, { error: error.message });
+      sendDatabaseDishImageWriteError(res, error);
     }
     return true;
   }
