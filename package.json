@@ -30,6 +30,7 @@
     "db:check-dish-image-api": "pnpm db:generate && tsx --conditions=react-server tools/check-database-dish-image-api.mts"
   },
   "dependencies": {
+    "@node-rs/argon2": "2.0.2",
     "@prisma/adapter-pg": "7.9.0",
     "@prisma/client": "7.9.0",
     "dotenv": "^17.4.2",
