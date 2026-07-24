@@ -1,6 +1,11 @@
 import "server-only";
 
 import {
+  ADMIN_EMAIL_SETTINGS,
+  isValidAdminEmail,
+  normalizeAdminEmail,
+} from "./admin-email";
+import {
   validatePasswordPolicy,
   type PasswordPolicyContext,
   type PasswordPolicyIssueCode,
@@ -11,7 +16,7 @@ export const INITIAL_OWNER_SETTINGS = Object.freeze({
   status: "ACTIVE",
   minimumDisplayNameCharacters: 1,
   maximumDisplayNameCharacters: 80,
-  maximumEmailCharacters: 254,
+  maximumEmailCharacters: ADMIN_EMAIL_SETTINGS.maximumCharacters,
 });
 
 export type OwnerBootstrapField = "email" | "displayName" | "password";
@@ -66,54 +71,9 @@ export class OwnerBootstrapPlanError extends Error {
 }
 
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f-\u009f]/u;
-const EMAIL_LOCAL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i;
-const EMAIL_DOMAIN_LABEL_PATTERN =
-  /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function normalizeEmail(value: unknown): string {
-  return typeof value === "string"
-    ? value.normalize("NFC").trim().toLowerCase()
-    : "";
-}
-
-function validEmail(email: string): boolean {
-  if (
-    email.length > INITIAL_OWNER_SETTINGS.maximumEmailCharacters ||
-    !/^[\x21-\x7e]+$/u.test(email)
-  ) {
-    return false;
-  }
-
-  const parts = email.split("@");
-
-  if (parts.length !== 2) {
-    return false;
-  }
-
-  const [local, domain] = parts;
-
-  if (
-    !local ||
-    local.length > 64 ||
-    local.startsWith(".") ||
-    local.endsWith(".") ||
-    local.includes("..") ||
-    !EMAIL_LOCAL_PATTERN.test(local)
-  ) {
-    return false;
-  }
-
-  const labels = domain.split(".");
-
-  return (
-    domain.length <= 253 &&
-    labels.length >= 2 &&
-    labels.every((label) => EMAIL_DOMAIN_LABEL_PATTERN.test(label))
-  );
 }
 
 function normalizeDisplayName(value: unknown): string {
@@ -146,7 +106,7 @@ export function validateInitialOwnerInput(
   input: unknown,
 ): OwnerBootstrapValidation {
   const source = isRecord(input) ? input : {};
-  const email = normalizeEmail(source.email);
+  const email = normalizeAdminEmail(source.email);
   const displayName = normalizeDisplayName(source.displayName);
   const issues: OwnerBootstrapIssue[] = [];
 
@@ -156,7 +116,7 @@ export function validateInitialOwnerInput(
       code: "EMAIL_REQUIRED",
       message: "请输入管理员邮箱",
     });
-  } else if (!validEmail(email)) {
+  } else if (!isValidAdminEmail(email)) {
     issues.push({
       field: "email",
       code: "EMAIL_INVALID",
