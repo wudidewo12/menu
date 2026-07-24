@@ -10,10 +10,19 @@ import {
 
 assert.deepEqual(REQUEST_ORIGIN_SETTINGS, {
   allowedProtocols: ["http:", "https:"],
+  localHttpHostnames: [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+  ],
 });
 assert.equal(Object.isFrozen(REQUEST_ORIGIN_SETTINGS), true);
 assert.equal(
   Object.isFrozen(REQUEST_ORIGIN_SETTINGS.allowedProtocols),
+  true,
+);
+assert.equal(
+  Object.isFrozen(REQUEST_ORIGIN_SETTINGS.localHttpHostnames),
   true,
 );
 
@@ -41,6 +50,9 @@ for (const invalidAllowedOrigin of [
   "*",
   "https://*.example.com",
   "ftp://menu.example.com",
+  "http://menu.example.com",
+  "http://192.168.1.10:3001",
+  "http://0.0.0.0:3001",
   "https://user@menu.example.com",
   "https://user:password@menu.example.com",
   "https://menu.example.com/admin",
@@ -130,6 +142,7 @@ assert.doesNotMatch(source, /console\./);
 
 console.log("request origin boundary: passed");
 console.log("allowed protocols: http/https only");
+console.log("plain HTTP: loopback hosts only");
 console.log("scheme/host/port comparison: enforced");
 console.log("missing/null/multiple origins: rejected");
 console.log("path/query/hash/credentials: rejected");

@@ -4,6 +4,11 @@ export const REQUEST_ORIGIN_SETTINGS = Object.freeze({
   allowedProtocols: Object.freeze(
     ["http:", "https:"] as const,
   ),
+  localHttpHostnames: Object.freeze([
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+  ] as const),
 });
 
 export class InvalidAllowedOriginError extends Error {
@@ -46,6 +51,18 @@ function parseHttpOrigin(candidate: string): URL | null {
     parsed.pathname !== "/" ||
     parsed.search ||
     parsed.hash
+  ) {
+    return null;
+  }
+
+  if (
+    parsed.protocol === "http:" &&
+    !REQUEST_ORIGIN_SETTINGS.localHttpHostnames.includes(
+      parsed.hostname as
+        | "localhost"
+        | "127.0.0.1"
+        | "[::1]",
+    )
   ) {
     return null;
   }

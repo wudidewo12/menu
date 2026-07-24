@@ -45,6 +45,7 @@ cp .env.example .env.local
 
 ```env
 ADMIN_PASSWORD=请替换成随机强密码
+APP_ORIGIN=http://127.0.0.1:3001
 ```
 
 可以使用 Node.js 生成一条 32 位随机密码：
@@ -57,6 +58,8 @@ node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'
 
 如果本地没有设置 `ADMIN_PASSWORD`，开发启动器会为本次运行自动生成一个临时密码，并显示在本机终端中。
 
+`APP_ORIGIN` 是唯一允许创建管理员登录会话的网站来源，协议、域名和端口必须与浏览器地址一致。本地开发启动器未读取到该配置时，会使用 `http://127.0.0.1:3001`；非本机地址必须使用 HTTPS。
+
 ### 3. 启动项目
 
 ```bash
@@ -65,8 +68,8 @@ pnpm dev
 
 启动完成后访问：
 
-- 菜单首页：<http://localhost:3001>
-- 后台管理：<http://localhost:3001/admin>
+- 菜单首页：<http://127.0.0.1:3001>
+- 后台管理：<http://127.0.0.1:3001/admin>
 
 ## 常用命令
 
@@ -118,7 +121,7 @@ menu/
 ## 安全说明
 
 - 项目不提供公开的默认管理员密码。
-- 正式服务缺少 `ADMIN_PASSWORD` 时会拒绝启动。
+- 正式服务缺少 `ADMIN_PASSWORD` 或 `APP_ORIGIN` 时会拒绝启动。
 - `.env.local`、运行时数据和本机部署配置均被 Git 忽略。
 - 不要在 Issue、截图、聊天记录或提交记录中公开密码和 API Key。
 - `pnpm audit --prod` 应在升级依赖和发布前运行。

@@ -12,6 +12,7 @@ try {
 }
 
 const port = process.env.PORT || '3001';
+const appOrigin = process.env.APP_ORIGIN || `http://127.0.0.1:${port}`;
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 const configuredAdminPassword = process.env.ADMIN_PASSWORD;
 const adminPassword = configuredAdminPassword || randomBytes(24).toString('base64url');
@@ -115,7 +116,7 @@ console.log('=> 构建前端静态产物...');
 const build = packageManagerCommand();
 await run(build.command, build.args);
 
-console.log(`=> 启动菜单服务 http://localhost:${port}`);
+console.log(`=> 启动菜单服务 ${appOrigin}`);
 const server = spawn(
   process.execPath,
   ['--import', 'tsx', '--conditions=react-server', 'server.js'],
@@ -125,6 +126,7 @@ const server = spawn(
     env: {
       ...process.env,
       PORT: port,
+      APP_ORIGIN: appOrigin,
       DATA_DIR: dataDir,
       ADMIN_PASSWORD: adminPassword,
     },

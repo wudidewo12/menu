@@ -6,6 +6,8 @@ import path from "node:path";
 export interface ApiResponse {
   status: number;
   payload: Record<string, unknown>;
+  headers: Record<string, string>;
+  setCookies: string[];
 }
 
 export interface RunningServer {
@@ -76,9 +78,11 @@ export async function startServer(
   }
 
   const port = await getFreePort();
+  const baseUrl = `http://127.0.0.1:${port}`;
   const childEnvironment = {
     ...process.env,
     ADMIN_PASSWORD: adminPassword,
+    APP_ORIGIN: baseUrl,
     DATA_DIR: dataDirectory,
     MENU_READ_SOURCE: menuSource,
     PORT: String(port),
@@ -111,8 +115,6 @@ export async function startServer(
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
-  const baseUrl = `http://127.0.0.1:${port}`;
-
   await waitForHealth(baseUrl, child);
   return {
     baseUrl,
@@ -144,6 +146,9 @@ export async function apiRequest(
   options: {
     method?: string;
     password?: string;
+    origin?: string;
+    cookie?: string;
+    contentType?: string | null;
     body?: unknown;
     rawBody?: string;
   } = {},
@@ -152,8 +157,17 @@ export async function apiRequest(
   if (options.password) {
     headers["X-Admin-Password"] = options.password;
   }
+  if (options.origin !== undefined) {
+    headers.Origin = options.origin;
+  }
+  if (options.cookie !== undefined) {
+    headers.Cookie = options.cookie;
+  }
   if (options.body !== undefined || options.rawBody !== undefined) {
-    headers["Content-Type"] = "application/json";
+    if (options.contentType !== null) {
+      headers["Content-Type"] =
+        options.contentType ?? "application/json";
+    }
   }
 
   const response = await fetch(`${baseUrl}${pathname}`, {
@@ -164,9 +178,25 @@ export async function apiRequest(
       (options.body === undefined ? undefined : JSON.stringify(options.body)),
   });
 
+  const responseText = await response.text();
+  const getSetCookie = (
+    response.headers as Headers & {
+      getSetCookie?: () => string[];
+    }
+  ).getSetCookie;
+  const setCookies = getSetCookie
+    ? getSetCookie.call(response.headers)
+    : response.headers.get("set-cookie")
+      ? [response.headers.get("set-cookie") as string]
+      : [];
+
   return {
     status: response.status,
-    payload: (await response.json()) as Record<string, unknown>,
+    payload: responseText
+      ? JSON.parse(responseText) as Record<string, unknown>
+      : {},
+    headers: Object.fromEntries(response.headers.entries()),
+    setCookies,
   };
 }
 

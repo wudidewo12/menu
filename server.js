@@ -13,13 +13,20 @@ const ORDERS_DIR = path.join(DATA_DIR, 'orders');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const PORT = process.env.PORT || 8081;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const APP_ORIGIN = process.env.APP_ORIGIN;
 const MENU_READ_SOURCE = String(process.env.MENU_READ_SOURCE || 'json').trim().toLowerCase();
 const JSON_BODY_LIMIT = 2_000_000;
+const ADMIN_LOGIN_BODY_LIMIT = 16_384;
 const IMAGE_UPLOAD_LIMIT = 12_000_000;
 const MENU_READ_SOURCES = new Set(['json', 'database']);
 
 if (!ADMIN_PASSWORD) {
   console.error('Missing ADMIN_PASSWORD. Set it before starting the menu server.');
+  process.exit(1);
+}
+
+if (!APP_ORIGIN) {
+  console.error('Missing APP_ORIGIN. Set the single allowed site origin before starting the menu server.');
   process.exit(1);
 }
 
@@ -31,6 +38,11 @@ if (!MENU_READ_SOURCES.has(MENU_READ_SOURCE)) {
 let databaseMenuReaderPromise;
 let databaseMenuWriterPromise;
 let databaseDishImageWriterPromise;
+let adminLoginServicePromise;
+let adminSessionCookiePromise;
+let requestOriginBoundaryPromise;
+let allowedAppOrigin;
+let adminSessionCookieMode;
 
 function loadDatabaseMenuReader() {
   if (!databaseMenuReaderPromise) {
@@ -54,6 +66,30 @@ function loadDatabaseDishImageWriter() {
   }
 
   return databaseDishImageWriterPromise;
+}
+
+function loadAdminLoginService() {
+  if (!adminLoginServicePromise) {
+    adminLoginServicePromise = import('./src/server/auth/admin-login.ts');
+  }
+
+  return adminLoginServicePromise;
+}
+
+function loadAdminSessionCookie() {
+  if (!adminSessionCookiePromise) {
+    adminSessionCookiePromise = import('./src/server/auth/admin-session-cookie.ts');
+  }
+
+  return adminSessionCookiePromise;
+}
+
+function loadRequestOriginBoundary() {
+  if (!requestOriginBoundaryPromise) {
+    requestOriginBoundaryPromise = import('./src/server/http/request-origin.ts');
+  }
+
+  return requestOriginBoundaryPromise;
 }
 
 const TYPES = {
@@ -110,12 +146,13 @@ function cleanDishIds(ids) {
     });
 }
 
-function sendJson(res, status, payload) {
+function sendJson(res, status, payload, additionalHeaders = {}) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'Content-Length': Buffer.byteLength(body),
+    ...additionalHeaders,
   });
   res.end(body);
 }
@@ -267,6 +304,35 @@ function requireAdmin(req, res) {
   if (adminToken(req) === ADMIN_PASSWORD) return true;
   sendJson(res, 401, { error: 'ADMIN_AUTH_REQUIRED' });
   return false;
+}
+
+function hasJsonContentType(req) {
+  const contentType = req.headers['content-type'];
+  if (typeof contentType !== 'string') return false;
+
+  return contentType
+    .split(';', 1)[0]
+    .trim()
+    .toLowerCase() === 'application/json';
+}
+
+function safeAdminLoginPayload(login) {
+  return {
+    authenticated: true,
+    user: {
+      id: login.user.id,
+      email: login.user.email,
+      displayName: login.user.displayName,
+      role: login.user.role,
+      status: login.user.status,
+    },
+    session: {
+      id: login.session.id,
+      expiresAt: login.session.expiresAt,
+      lastSeenAt: login.session.lastSeenAt,
+      createdAt: login.session.createdAt,
+    },
+  };
 }
 
 function sendDatabaseMenuWriteError(res, error) {
@@ -491,12 +557,85 @@ function saveOrder(sessionId, order) {
 
 async function handleApi(req, res, pathname) {
   if (req.method === 'OPTIONS') {
+    if (pathname === '/api/admin/session') {
+      res.writeHead(204, {
+        Allow: 'POST',
+      });
+      res.end();
+      return true;
+    }
+
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Password',
     });
     res.end();
+    return true;
+  }
+
+  if (pathname === '/api/admin/session' && req.method === 'POST') {
+    const { hasAllowedRequestOrigin } = await loadRequestOriginBoundary();
+
+    if (!hasAllowedRequestOrigin(req.headers.origin, allowedAppOrigin)) {
+      sendJson(res, 403, { error: 'ADMIN_ORIGIN_FORBIDDEN' });
+      return true;
+    }
+
+    if (!hasJsonContentType(req)) {
+      sendJson(res, 415, { error: 'JSON_CONTENT_TYPE_REQUIRED' });
+      return true;
+    }
+
+    let body;
+    try {
+      body = await readBody(req, ADMIN_LOGIN_BODY_LIMIT);
+    } catch {
+      sendJson(res, 400, { error: 'ADMIN_LOGIN_INPUT_INVALID' });
+      return true;
+    }
+
+    try {
+      const [{ loginAdmin }, { serializeAdminSessionCookie }] =
+        await Promise.all([
+          loadAdminLoginService(),
+          loadAdminSessionCookie(),
+        ]);
+      const login = await loginAdmin(body);
+      body = null;
+      const sessionCookie = serializeAdminSessionCookie(
+        login.token,
+        adminSessionCookieMode,
+      );
+
+      sendJson(
+        res,
+        200,
+        safeAdminLoginPayload(login),
+        {
+          'Set-Cookie': sessionCookie,
+        },
+      );
+    } catch (error) {
+      body = null;
+      const errorCode =
+        error && typeof error.code === 'string'
+          ? error.code
+          : '';
+
+      if (errorCode === 'ADMIN_LOGIN_INPUT_INVALID') {
+        sendJson(res, 400, { error: errorCode });
+        return true;
+      }
+
+      if (errorCode === 'ADMIN_LOGIN_REJECTED') {
+        sendJson(res, 401, { error: errorCode });
+        return true;
+      }
+
+      console.error('Admin login failed.');
+      sendJson(res, 503, { error: 'ADMIN_LOGIN_UNAVAILABLE' });
+    }
     return true;
   }
 
@@ -725,11 +864,29 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  ensureDir(DATA_DIR);
-  ensureDir(ORDERS_DIR);
-  ensureDir(UPLOADS_DIR);
-  console.log(
-    `menu server running on port ${PORT} (static=${ROOT}, data=${DATA_DIR}, menu=${MENU_READ_SOURCE})`,
-  );
-});
+async function startServer() {
+  try {
+    const { normalizeAllowedOrigin } =
+      await loadRequestOriginBoundary();
+    allowedAppOrigin = normalizeAllowedOrigin(APP_ORIGIN);
+    adminSessionCookieMode =
+      new URL(allowedAppOrigin).protocol === 'https:'
+        ? 'production'
+        : 'development';
+  } catch {
+    console.error('APP_ORIGIN must be one valid HTTP or HTTPS origin.');
+    process.exitCode = 1;
+    return;
+  }
+
+  server.listen(PORT, () => {
+    ensureDir(DATA_DIR);
+    ensureDir(ORDERS_DIR);
+    ensureDir(UPLOADS_DIR);
+    console.log(
+      `menu server running on port ${PORT} (static=${ROOT}, data=${DATA_DIR}, menu=${MENU_READ_SOURCE})`,
+    );
+  });
+}
+
+void startServer();
