@@ -37,18 +37,34 @@ enum AdminStatus {
 }
 
 model AdminUser {
-  id                  String      @id @default(uuid(7)) @db.Uuid
-  email               String      @unique
+  id                  String         @id @default(uuid(7)) @db.Uuid
+  email               String         @unique
   displayName         String
   passwordHash        String
-  role                AdminRole   @default(VIEWER)
-  status              AdminStatus @default(DISABLED)
-  failedLoginAttempts Int         @default(0)
+  role                AdminRole      @default(VIEWER)
+  status              AdminStatus    @default(DISABLED)
+  failedLoginAttempts Int            @default(0)
   lockedUntil         DateTime?
-  passwordChangedAt   DateTime    @default(now())
+  passwordChangedAt   DateTime       @default(now())
   lastLoginAt         DateTime?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  sessions            AdminSession[]
+}
+
+model AdminSession {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
 }
 
 model Menu {
