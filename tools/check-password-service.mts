@@ -5,9 +5,12 @@ import {
   hashPassword,
   verifyPassword,
 } from "../src/server/auth/password.ts";
+import { PasswordPolicyValidationError } from "../src/server/auth/password-policy.ts";
 
 const TEST_PASSWORD = "Menu-Password-Service-Test-Only!2026";
 const WRONG_TEST_PASSWORD = "Menu-Password-Service-Wrong-Test-Only!2026";
+const COMPOSED_UNICODE_PASSWORD = "Menu-Caf\u00e9-Test-Only!2026";
+const DECOMPOSED_UNICODE_PASSWORD = "Menu-Cafe\u0301-Test-Only!2026";
 
 function readEncodedSettings(passwordHash: string) {
   const match = passwordHash.match(
@@ -27,6 +30,7 @@ function readEncodedSettings(passwordHash: string) {
 
 const firstHash = await hashPassword(TEST_PASSWORD);
 const secondHash = await hashPassword(TEST_PASSWORD);
+const unicodeHash = await hashPassword(COMPOSED_UNICODE_PASSWORD);
 const encodedSettings = readEncodedSettings(firstHash);
 
 assert.notEqual(
@@ -44,11 +48,17 @@ assert.equal(encodedSettings.timeCost, PASSWORD_HASH_SETTINGS.timeCost);
 assert.equal(encodedSettings.parallelism, PASSWORD_HASH_SETTINGS.parallelism);
 assert.equal(await verifyPassword(TEST_PASSWORD, firstHash), true);
 assert.equal(await verifyPassword(WRONG_TEST_PASSWORD, firstHash), false);
+assert.equal(
+  await verifyPassword(DECOMPOSED_UNICODE_PASSWORD, unicodeHash),
+  true,
+);
 assert.equal(await verifyPassword(TEST_PASSWORD, "not-an-argon2-hash"), false);
 assert.equal(await verifyPassword("", firstHash), false);
 await assert.rejects(
   hashPassword(""),
-  /Password must be a non-empty string/,
+  (error: unknown) =>
+    error instanceof PasswordPolicyValidationError &&
+    error.issues.some((issue) => issue.code === "PASSWORD_REQUIRED"),
 );
 
 console.log("password hash service: passed");
@@ -60,5 +70,6 @@ console.log(`parallelism: ${encodedSettings.parallelism}`);
 console.log("random salt: passed");
 console.log("correct password: accepted");
 console.log("wrong password: rejected");
+console.log("equivalent Unicode password: accepted");
 console.log("malformed hash: rejected");
 console.log("database writes: 0");

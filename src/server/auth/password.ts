@@ -6,6 +6,12 @@ import {
   type Options,
 } from "@node-rs/argon2";
 
+import {
+  normalizePasswordForAuthentication,
+  preparePasswordForHashing,
+  type PasswordPolicyContext,
+} from "./password-policy";
+
 export const PASSWORD_HASH_SETTINGS = Object.freeze({
   algorithm: "argon2id",
   version: 19,
@@ -37,12 +43,14 @@ function hasPasswordValue(password: unknown): password is string {
  * 为准备保存到数据库的密码生成不可逆的 Argon2id 哈希。
  * 原始密码只参与本次计算，不会被这个模块保存或记录。
  */
-export async function hashPassword(password: string): Promise<string> {
-  if (!hasPasswordValue(password)) {
-    throw new TypeError("Password must be a non-empty string");
-  }
-
-  return hash(password, ARGON2ID_OPTIONS);
+export async function hashPassword(
+  password: string,
+  context: PasswordPolicyContext = {},
+): Promise<string> {
+  return hash(
+    preparePasswordForHashing(password, context),
+    ARGON2ID_OPTIONS,
+  );
 }
 
 /**
@@ -58,7 +66,10 @@ export async function verifyPassword(
   }
 
   try {
-    return await verify(passwordHash, password);
+    return await verify(
+      passwordHash,
+      normalizePasswordForAuthentication(password),
+    );
   } catch {
     return false;
   }
