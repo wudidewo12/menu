@@ -36,7 +36,7 @@ delete process.env.POSTGRES_APP_PASSWORD;
 const [
   { AdminRole, AdminStatus },
   { hashPassword },
-  { hashSessionToken },
+  { createSessionToken, hashSessionToken },
   { readAdminSessionToken },
   { prisma },
 ] = await Promise.all([
@@ -140,12 +140,49 @@ try {
     },
   );
   assert.equal(preflight.status, 204);
-  assert.equal(preflight.headers.allow, "POST");
+  assert.equal(preflight.headers.allow, "GET, POST");
   assert.equal(
     preflight.headers["access-control-allow-origin"],
     undefined,
   );
   assert.equal(preflight.setCookies.length, 0);
+
+  const missingSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+  );
+  assert.equal(missingSession.status, 401);
+  assert.equal(
+    missingSession.payload.error,
+    "ADMIN_SESSION_REQUIRED",
+  );
+
+  const malformedSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: "menu_admin_session=short",
+    },
+  );
+  assert.equal(malformedSession.status, 401);
+  assert.deepEqual(
+    malformedSession.payload,
+    missingSession.payload,
+  );
+
+  const unknownSessionToken = createSessionToken().token;
+  const unknownSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: `menu_admin_session=${unknownSessionToken}`,
+    },
+  );
+  assert.equal(unknownSession.status, 401);
+  assert.deepEqual(
+    unknownSession.payload,
+    missingSession.payload,
+  );
 
   const missingOrigin = await apiRequest(
     server.baseUrl,
@@ -336,6 +373,67 @@ try {
   assert.notEqual(session.tokenHash, token);
   assert.equal(session.userId, testUserId);
 
+  const cookieHeader = setCookie.split(";", 1)[0];
+  assert.ok(cookieHeader);
+  const duplicateSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: `${cookieHeader}; ${cookieHeader}`,
+    },
+  );
+  assert.equal(duplicateSession.status, 401);
+  assert.deepEqual(
+    duplicateSession.payload,
+    missingSession.payload,
+  );
+
+  const activeSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: cookieHeader,
+    },
+  );
+  assert.equal(activeSession.status, 200);
+  assert.deepEqual(
+    activeSession.payload,
+    successfulLogin.payload,
+  );
+  assert.equal(activeSession.setCookies.length, 0);
+
+  const unchangedSession =
+    await prisma.adminSession.findUniqueOrThrow({
+      where: {
+        id: session.id,
+      },
+    });
+  assert.equal(
+    unchangedSession.lastSeenAt.getTime(),
+    session.lastSeenAt.getTime(),
+  );
+
+  await prisma.adminSession.update({
+    where: {
+      id: session.id,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+  const revokedSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: cookieHeader,
+    },
+  );
+  assert.equal(revokedSession.status, 401);
+  assert.deepEqual(
+    revokedSession.payload,
+    missingSession.payload,
+  );
+
   const updatedUser =
     await prisma.adminUser.findUniqueOrThrow({
       where: {
@@ -351,6 +449,29 @@ try {
   assert.equal(responseText.includes(wrongPassword), false);
   assert.equal(responseText.includes(token), false);
   assert.equal(responseText.includes(session.tokenHash), false);
+
+  await stopServer(server);
+  server = null;
+  const brokenDatabaseUrl = new URL(databaseUrl);
+  brokenDatabaseUrl.hostname = "127.0.0.1";
+  brokenDatabaseUrl.port = "1";
+  server = await startServer(
+    "database",
+    adminPassword,
+    path.join(temporaryRoot, "broken-data"),
+    brokenDatabaseUrl.toString(),
+  );
+  const unavailableSession = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: `menu_admin_session=${unknownSessionToken}`,
+    },
+  );
+  assert.equal(unavailableSession.status, 503);
+  assert.deepEqual(unavailableSession.payload, {
+    error: "ADMIN_SESSION_UNAVAILABLE",
+  });
 } catch (error) {
   topLevelError = error;
 } finally {
@@ -383,6 +504,10 @@ console.log("missing/wrong Origin: 403 before login");
 console.log("content type/input validation: 415/400");
 console.log("unknown/wrong credentials: identical 401");
 console.log("successful login and Set-Cookie: 200");
+console.log("current active session lookup: 200");
+console.log("missing/malformed/unknown/revoked session: identical 401");
+console.log("unavailable session database: safe 503");
+console.log("current session database writes: 0");
 console.log("raw password/token/hash printed: 0");
 console.log(
   `AdminUser rows before/after: ${before.adminUsers}/${after.adminUsers}`,

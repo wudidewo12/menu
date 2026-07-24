@@ -39,6 +39,7 @@ let databaseMenuReaderPromise;
 let databaseMenuWriterPromise;
 let databaseDishImageWriterPromise;
 let adminLoginServicePromise;
+let adminSessionServicePromise;
 let adminSessionCookiePromise;
 let requestOriginBoundaryPromise;
 let allowedAppOrigin;
@@ -74,6 +75,14 @@ function loadAdminLoginService() {
   }
 
   return adminLoginServicePromise;
+}
+
+function loadAdminSessionService() {
+  if (!adminSessionServicePromise) {
+    adminSessionServicePromise = import('./src/server/auth/admin-session.ts');
+  }
+
+  return adminSessionServicePromise;
 }
 
 function loadAdminSessionCookie() {
@@ -316,21 +325,21 @@ function hasJsonContentType(req) {
     .toLowerCase() === 'application/json';
 }
 
-function safeAdminLoginPayload(login) {
+function safeAdminSessionPayload(result) {
   return {
     authenticated: true,
     user: {
-      id: login.user.id,
-      email: login.user.email,
-      displayName: login.user.displayName,
-      role: login.user.role,
-      status: login.user.status,
+      id: result.user.id,
+      email: result.user.email,
+      displayName: result.user.displayName,
+      role: result.user.role,
+      status: result.user.status,
     },
     session: {
-      id: login.session.id,
-      expiresAt: login.session.expiresAt,
-      lastSeenAt: login.session.lastSeenAt,
-      createdAt: login.session.createdAt,
+      id: result.session.id,
+      expiresAt: result.session.expiresAt,
+      lastSeenAt: result.session.lastSeenAt,
+      createdAt: result.session.createdAt,
     },
   };
 }
@@ -559,7 +568,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'OPTIONS') {
     if (pathname === '/api/admin/session') {
       res.writeHead(204, {
-        Allow: 'POST',
+        Allow: 'GET, POST',
       });
       res.end();
       return true;
@@ -571,6 +580,49 @@ async function handleApi(req, res, pathname) {
       'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Password',
     });
     res.end();
+    return true;
+  }
+
+  if (pathname === '/api/admin/session' && req.method === 'GET') {
+    try {
+      const { readAdminSessionToken } =
+        await loadAdminSessionCookie();
+      const token = readAdminSessionToken(
+        req.headers.cookie,
+      );
+
+      if (!token) {
+        sendJson(res, 401, {
+          error: 'ADMIN_SESSION_REQUIRED',
+        });
+        return true;
+      }
+
+      const { findActiveAdminSession } =
+        await loadAdminSessionService();
+      const session = await findActiveAdminSession(token);
+
+      if (!session) {
+        sendJson(res, 401, {
+          error: 'ADMIN_SESSION_REQUIRED',
+        });
+        return true;
+      }
+
+      sendJson(
+        res,
+        200,
+        safeAdminSessionPayload({
+          user: session.user,
+          session,
+        }),
+      );
+    } catch {
+      console.error('Admin session lookup failed.');
+      sendJson(res, 503, {
+        error: 'ADMIN_SESSION_UNAVAILABLE',
+      });
+    }
     return true;
   }
 
@@ -611,7 +663,7 @@ async function handleApi(req, res, pathname) {
       sendJson(
         res,
         200,
-        safeAdminLoginPayload(login),
+        safeAdminSessionPayload(login),
         {
           'Set-Cookie': sessionCookie,
         },
