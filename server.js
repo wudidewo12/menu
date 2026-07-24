@@ -568,7 +568,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'OPTIONS') {
     if (pathname === '/api/admin/session') {
       res.writeHead(204, {
-        Allow: 'GET, POST',
+        Allow: 'DELETE, GET, POST',
       });
       res.end();
       return true;
@@ -580,6 +580,54 @@ async function handleApi(req, res, pathname) {
       'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Password',
     });
     res.end();
+    return true;
+  }
+
+  if (pathname === '/api/admin/session' && req.method === 'DELETE') {
+    const { hasAllowedRequestOrigin } =
+      await loadRequestOriginBoundary();
+
+    if (!hasAllowedRequestOrigin(req.headers.origin, allowedAppOrigin)) {
+      sendJson(res, 403, {
+        error: 'ADMIN_ORIGIN_FORBIDDEN',
+      });
+      return true;
+    }
+
+    try {
+      const {
+        readAdminSessionToken,
+        serializeClearedAdminSessionCookie,
+      } = await loadAdminSessionCookie();
+      const token = readAdminSessionToken(
+        req.headers.cookie,
+      );
+
+      if (token) {
+        const { revokeAdminSession } =
+          await loadAdminSessionService();
+        await revokeAdminSession(token);
+      }
+
+      sendJson(
+        res,
+        200,
+        {
+          authenticated: false,
+        },
+        {
+          'Set-Cookie':
+            serializeClearedAdminSessionCookie(
+              adminSessionCookieMode,
+            ),
+        },
+      );
+    } catch {
+      console.error('Admin session revocation failed.');
+      sendJson(res, 503, {
+        error: 'ADMIN_SESSION_UNAVAILABLE',
+      });
+    }
     return true;
   }
 

@@ -140,7 +140,10 @@ try {
     },
   );
   assert.equal(preflight.status, 204);
-  assert.equal(preflight.headers.allow, "GET, POST");
+  assert.equal(
+    preflight.headers.allow,
+    "DELETE, GET, POST",
+  );
   assert.equal(
     preflight.headers["access-control-allow-origin"],
     undefined,
@@ -413,26 +416,135 @@ try {
     session.lastSeenAt.getTime(),
   );
 
-  await prisma.adminSession.update({
-    where: {
-      id: session.id,
+  const forbiddenLogout = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      method: "DELETE",
+      origin: "https://evil.example",
+      cookie: cookieHeader,
     },
-    data: {
-      revokedAt: new Date(),
-    },
+  );
+  assert.equal(forbiddenLogout.status, 403);
+  assert.deepEqual(forbiddenLogout.payload, {
+    error: "ADMIN_ORIGIN_FORBIDDEN",
   });
-  const revokedSession = await apiRequest(
+  assert.equal(forbiddenLogout.setCookies.length, 0);
+  assert.equal(
+    (
+      await prisma.adminSession.findUniqueOrThrow({
+        where: {
+          id: session.id,
+        },
+      })
+    ).revokedAt,
+    null,
+  );
+
+  const activeAfterForbiddenLogout = await apiRequest(
     server.baseUrl,
     "/api/admin/session",
     {
       cookie: cookieHeader,
     },
   );
-  assert.equal(revokedSession.status, 401);
+  assert.equal(activeAfterForbiddenLogout.status, 200);
+
+  const successfulLogout = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      method: "DELETE",
+      origin: server.baseUrl,
+      cookie: cookieHeader,
+    },
+  );
+  assert.equal(successfulLogout.status, 200);
+  assert.deepEqual(successfulLogout.payload, {
+    authenticated: false,
+  });
+  assert.deepEqual(successfulLogout.setCookies, [
+    "menu_admin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+  ]);
+  assert.equal(
+    readAdminSessionToken(successfulLogout.setCookies[0]),
+    null,
+  );
+
+  const revokedDatabaseSession =
+    await prisma.adminSession.findUniqueOrThrow({
+      where: {
+        id: session.id,
+      },
+    });
+  assert.ok(revokedDatabaseSession.revokedAt);
+
+  const revokedSessionLookup = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      cookie: cookieHeader,
+    },
+  );
+  assert.equal(revokedSessionLookup.status, 401);
   assert.deepEqual(
-    revokedSession.payload,
+    revokedSessionLookup.payload,
     missingSession.payload,
   );
+
+  const repeatedLogout = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      method: "DELETE",
+      origin: server.baseUrl,
+      cookie: cookieHeader,
+    },
+  );
+  assert.equal(repeatedLogout.status, 200);
+  assert.deepEqual(
+    repeatedLogout.payload,
+    successfulLogout.payload,
+  );
+  assert.deepEqual(
+    repeatedLogout.setCookies,
+    successfulLogout.setCookies,
+  );
+  assert.equal(
+    (
+      await prisma.adminSession.findUniqueOrThrow({
+        where: {
+          id: session.id,
+        },
+      })
+    ).revokedAt?.getTime(),
+    revokedDatabaseSession.revokedAt.getTime(),
+  );
+
+  for (const cookie of [
+    undefined,
+    "menu_admin_session=short",
+    `menu_admin_session=${unknownSessionToken}`,
+  ]) {
+    const idempotentLogout = await apiRequest(
+      server.baseUrl,
+      "/api/admin/session",
+      {
+        method: "DELETE",
+        origin: server.baseUrl,
+        cookie,
+      },
+    );
+    assert.equal(idempotentLogout.status, 200);
+    assert.deepEqual(
+      idempotentLogout.payload,
+      successfulLogout.payload,
+    );
+    assert.deepEqual(
+      idempotentLogout.setCookies,
+      successfulLogout.setCookies,
+    );
+  }
 
   const updatedUser =
     await prisma.adminUser.findUniqueOrThrow({
@@ -472,6 +584,20 @@ try {
   assert.deepEqual(unavailableSession.payload, {
     error: "ADMIN_SESSION_UNAVAILABLE",
   });
+  const unavailableLogout = await apiRequest(
+    server.baseUrl,
+    "/api/admin/session",
+    {
+      method: "DELETE",
+      origin: server.baseUrl,
+      cookie: `menu_admin_session=${unknownSessionToken}`,
+    },
+  );
+  assert.equal(unavailableLogout.status, 503);
+  assert.deepEqual(unavailableLogout.payload, {
+    error: "ADMIN_SESSION_UNAVAILABLE",
+  });
+  assert.equal(unavailableLogout.setCookies.length, 0);
 } catch (error) {
   topLevelError = error;
 } finally {
@@ -508,6 +634,10 @@ console.log("current active session lookup: 200");
 console.log("missing/malformed/unknown/revoked session: identical 401");
 console.log("unavailable session database: safe 503");
 console.log("current session database writes: 0");
+console.log("wrong-Origin logout: 403 without revoke/clear");
+console.log("successful logout: revoked and cookie cleared");
+console.log("missing/malformed/unknown/repeated logout: idempotent 200");
+console.log("unavailable logout database: safe 503 without clear");
 console.log("raw password/token/hash printed: 0");
 console.log(
   `AdminUser rows before/after: ${before.adminUsers}/${after.adminUsers}`,
