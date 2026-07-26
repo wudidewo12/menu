@@ -72,7 +72,8 @@
   "pnpm": {
     "overrides": {
       "find-my-way": "9.7.0",
-      "postcss": "8.5.15",
+      "postcss": "8.5.18",
+      "valibot": "1.4.2",
       "next>sharp": "-"
     }
   }
