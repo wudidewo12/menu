@@ -36,10 +36,80 @@ delete process.env.POSTGRES_OWNER;
 delete process.env.POSTGRES_OWNER_PASSWORD;
 delete process.env.POSTGRES_APP_PASSWORD;
 
-const [{ readMenuFromDatabase }, { prisma }] = await Promise.all([
+const [
+  { readMenuFromDatabase },
+  { prisma },
+  { createAdminSession },
+  { AdminRole, AdminStatus },
+] = await Promise.all([
   import("../src/server/db/menu-read.ts"),
   import("../src/server/db/prisma.ts"),
+  import("../src/server/auth/admin-session.ts"),
+  import("../src/generated/prisma/enums.ts"),
 ]);
+
+interface TestAdminCookies {
+  owner: string;
+  editor: string;
+  viewer: string;
+}
+
+const adminTestPrefix =
+  `menu-write-${randomBytes(8).toString("hex")}-`;
+
+async function adminDatabaseCounts() {
+  const [adminUsers, adminSessions] = await Promise.all([
+    prisma.adminUser.count(),
+    prisma.adminSession.count(),
+  ]);
+
+  return {
+    adminUsers,
+    adminSessions,
+  };
+}
+
+async function createTestAdminCookies(): Promise<TestAdminCookies> {
+  const definitions = [
+    {
+      key: "owner",
+      role: AdminRole.OWNER,
+      displayName: "菜单写入测试所有者",
+    },
+    {
+      key: "editor",
+      role: AdminRole.EDITOR,
+      displayName: "菜单写入测试编辑者",
+    },
+    {
+      key: "viewer",
+      role: AdminRole.VIEWER,
+      displayName: "菜单写入测试查看者",
+    },
+  ] as const;
+  const users = await Promise.all(
+    definitions.map((definition) =>
+      prisma.adminUser.create({
+        data: {
+          email: `${adminTestPrefix}${definition.key}@example.invalid`,
+          displayName: definition.displayName,
+          passwordHash: "TEST_HASH_NOT_FOR_LOGIN",
+          role: definition.role,
+          status: AdminStatus.ACTIVE,
+        },
+      }),
+    ),
+  );
+  const sessions = await Promise.all(
+    users.map((user) => createAdminSession(user.id)),
+  );
+
+  return {
+    owner: `menu_admin_session=${sessions[0].token}`,
+    editor: `menu_admin_session=${sessions[1].token}`,
+    viewer: `menu_admin_session=${sessions[2].token}`,
+  };
+}
 
 function addSkippedDishId(menu: Menu) {
   const desiredMenu = structuredClone(menu);
@@ -124,6 +194,7 @@ async function checkJsonMode(adminPassword: string) {
 async function checkBrokenDatabaseMode(
   adminPassword: string,
   currentMenu: Menu,
+  ownerCookie: string,
 ) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "menu-broken-db-api-check-"),
@@ -140,6 +211,38 @@ async function checkBrokenDatabaseMode(
       path.join(temporaryRoot, "data"),
       brokenDatabaseUrl.toString(),
     );
+    const forbiddenOrigin = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: "https://evil.example",
+        cookie: ownerCookie,
+        rawBody: "{",
+      },
+    );
+    assert.equal(forbiddenOrigin.status, 403);
+    assert.equal(
+      forbiddenOrigin.payload.error,
+      "ADMIN_ORIGIN_FORBIDDEN",
+    );
+
+    const unavailableSession = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: server.baseUrl,
+        cookie: ownerCookie,
+        rawBody: "{",
+      },
+    );
+    assert.equal(unavailableSession.status, 503);
+    assert.equal(
+      unavailableSession.payload.error,
+      "ADMIN_SESSION_UNAVAILABLE",
+    );
+
     const response = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
       password: adminPassword,
@@ -161,6 +264,7 @@ async function checkDatabaseMode(
   adminPassword: string,
   originalMenu: Menu,
   originalSnapshot: MenuDatabaseSnapshot,
+  adminCookies: TestAdminCookies,
 ) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "menu-db-api-check-"),
@@ -191,6 +295,54 @@ async function checkDatabaseMode(
     assert.equal(unauthorized.status, 401);
     assert.equal(unauthorized.payload.error, "ADMIN_AUTH_REQUIRED");
 
+    const forbiddenOrigin = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: "https://evil.example",
+        cookie: adminCookies.owner,
+        rawBody: "{",
+      },
+    );
+    assert.equal(forbiddenOrigin.status, 403);
+    assert.equal(
+      forbiddenOrigin.payload.error,
+      "ADMIN_ORIGIN_FORBIDDEN",
+    );
+
+    const invalidSession = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: server.baseUrl,
+        cookie: "menu_admin_session=short",
+        rawBody: "{",
+      },
+    );
+    assert.equal(invalidSession.status, 401);
+    assert.equal(
+      invalidSession.payload.error,
+      "ADMIN_SESSION_REQUIRED",
+    );
+
+    const viewerDenied = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: server.baseUrl,
+        cookie: adminCookies.viewer,
+        rawBody: "{",
+      },
+    );
+    assert.equal(viewerDenied.status, 403);
+    assert.equal(
+      viewerDenied.payload.error,
+      "ADMIN_PERMISSION_DENIED",
+    );
+
     const invalidBody = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
       password: adminPassword,
@@ -216,25 +368,61 @@ async function checkDatabaseMode(
       "MENU_WRITE_VALIDATION_FAILED",
     );
 
-    const successfulWrite = await apiRequest(
+    const ownerWrite = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
+        body: scenario.desiredMenu,
+      },
+    );
+    assert.equal(ownerWrite.status, 200);
+    assert.equal(ownerWrite.payload.version, 2);
+    successfulWriteCommitted = true;
+
+    const ownerSavedMenu = ownerWrite.payload as unknown as Menu;
+    assert.ok(ownerSavedMenu.settings.title.includes("数据库API测试"));
+
+    const editorDesiredMenu = structuredClone(ownerSavedMenu);
+    editorDesiredMenu.settings.title += "（编辑者会话）";
+    const editorWrite = await apiRequest(
+      server.baseUrl,
+      "/api/menu",
+      {
+        method: "PUT",
+        origin: server.baseUrl,
+        cookie: adminCookies.editor,
+        body: editorDesiredMenu,
+      },
+    );
+    assert.equal(editorWrite.status, 200);
+    assert.equal(editorWrite.payload.version, 3);
+
+    const editorSavedMenu = editorWrite.payload as unknown as Menu;
+    assert.ok(editorSavedMenu.settings.title.includes("编辑者会话"));
+
+    const legacyDesiredMenu = structuredClone(editorSavedMenu);
+    legacyDesiredMenu.settings.subtitle += "（旧密码兼容）";
+    const legacyWrite = await apiRequest(
       server.baseUrl,
       "/api/menu",
       {
         method: "PUT",
         password: adminPassword,
-        body: scenario.desiredMenu,
+        body: legacyDesiredMenu,
       },
     );
-    assert.equal(successfulWrite.status, 200);
-    assert.equal(successfulWrite.payload.version, 2);
-    successfulWriteCommitted = true;
+    assert.equal(legacyWrite.status, 200);
+    assert.equal(legacyWrite.payload.version, 4);
 
-    const savedMenu = successfulWrite.payload as unknown as Menu;
-    assert.ok(savedMenu.settings.title.includes("数据库API测试"));
+    const savedMenu = legacyWrite.payload as unknown as Menu;
+    assert.ok(savedMenu.settings.subtitle.includes("旧密码兼容"));
 
     const reread = await apiRequest(server.baseUrl, "/api/menu");
     assert.equal(reread.status, 200);
-    assert.deepEqual(reread.payload, successfulWrite.payload);
+    assert.deepEqual(reread.payload, legacyWrite.payload);
 
     const staleMenu = structuredClone(savedMenu);
     staleMenu.version = originalMenu.version;
@@ -282,8 +470,15 @@ async function checkDatabaseMode(
 
 const adminPassword = randomBytes(24).toString("hex");
 let topLevelError: unknown = null;
+const beforeAdminCounts = await adminDatabaseCounts();
+let afterAdminCounts = beforeAdminCounts;
 
 try {
+  assert.deepEqual(beforeAdminCounts, {
+    adminUsers: 0,
+    adminSessions: 0,
+  });
+  const adminCookies = await createTestAdminCookies();
   const originalMenu = await readMenuFromDatabase();
   if (!originalMenu) {
     throw new Error("The default database menu was not found");
@@ -304,6 +499,7 @@ try {
     adminPassword,
     originalMenu,
     originalSnapshot,
+    adminCookies,
   );
   assert.deepEqual(
     await takeMenuDatabaseSnapshot(prisma),
@@ -311,7 +507,11 @@ try {
   );
   assert.deepEqual(await readMenuFromDatabase(), originalMenu);
 
-  await checkBrokenDatabaseMode(adminPassword, originalMenu);
+  await checkBrokenDatabaseMode(
+    adminPassword,
+    originalMenu,
+    adminCookies.owner,
+  );
   assert.deepEqual(
     await takeMenuDatabaseSnapshot(prisma),
     originalSnapshot,
@@ -319,6 +519,14 @@ try {
 } catch (error) {
   topLevelError = error;
 } finally {
+  await prisma.adminUser.deleteMany({
+    where: {
+      email: {
+        startsWith: adminTestPrefix,
+      },
+    },
+  });
+  afterAdminCounts = await adminDatabaseCounts();
   await prisma.$disconnect();
 }
 
@@ -326,8 +534,15 @@ if (topLevelError) {
   throw topLevelError;
 }
 
+assert.deepEqual(afterAdminCounts, beforeAdminCounts);
+
 console.log("json mode authenticated PUT unchanged: passed");
 console.log("database mode unauthenticated PUT: 401");
+console.log("database mode wrong-Origin session PUT: 403 before database/body");
+console.log("database mode invalid session PUT: 401 before body");
+console.log("database mode VIEWER PUT: 403 before body");
+console.log("database mode OWNER/EDITOR session PUT: 200/200");
+console.log("database mode legacy password PUT: 200");
 console.log("database mode invalid body/validation: 400");
 console.log("database mode successful PUT/readback: 200");
 console.log("database mode stale version/dish id conflict: 409");
@@ -336,3 +551,6 @@ console.log("database snapshot restored exactly: yes");
 console.log("final business rows: 237");
 console.log("final menu version: 1");
 console.log("final dish sequence: 55");
+console.log(
+  `final admin users/sessions: ${afterAdminCounts.adminUsers}/${afterAdminCounts.adminSessions}`,
+);

@@ -41,6 +41,7 @@ let databaseDishImageWriterPromise;
 let adminLoginServicePromise;
 let adminSessionServicePromise;
 let adminSessionCookiePromise;
+let adminAuthorizationPromise;
 let requestOriginBoundaryPromise;
 let allowedAppOrigin;
 let adminSessionCookieMode;
@@ -91,6 +92,14 @@ function loadAdminSessionCookie() {
   }
 
   return adminSessionCookiePromise;
+}
+
+function loadAdminAuthorization() {
+  if (!adminAuthorizationPromise) {
+    adminAuthorizationPromise = import('./src/server/auth/admin-authorization.ts');
+  }
+
+  return adminAuthorizationPromise;
 }
 
 function loadRequestOriginBoundary() {
@@ -313,6 +322,47 @@ function requireAdmin(req, res) {
   if (adminToken(req) === ADMIN_PASSWORD) return true;
   sendJson(res, 401, { error: 'ADMIN_AUTH_REQUIRED' });
   return false;
+}
+
+async function requireMenuWriteAdmin(req, res) {
+  if (adminToken(req) === ADMIN_PASSWORD) return true;
+
+  if (typeof req.headers.cookie !== 'string' || !req.headers.cookie) {
+    sendJson(res, 401, { error: 'ADMIN_AUTH_REQUIRED' });
+    return false;
+  }
+
+  const { hasAllowedRequestOrigin } =
+    await loadRequestOriginBoundary();
+
+  if (!hasAllowedRequestOrigin(req.headers.origin, allowedAppOrigin)) {
+    sendJson(res, 403, { error: 'ADMIN_ORIGIN_FORBIDDEN' });
+    return false;
+  }
+
+  try {
+    const { authorizeAdminRequest } =
+      await loadAdminAuthorization();
+    const authorization = await authorizeAdminRequest(
+      req.headers.cookie,
+      'MENU_WRITE',
+    );
+
+    if (!authorization.authorized) {
+      sendJson(res, authorization.status, {
+        error: authorization.error,
+      });
+      return false;
+    }
+
+    return true;
+  } catch {
+    console.error('Admin menu authorization failed.');
+    sendJson(res, 503, {
+      error: 'ADMIN_SESSION_UNAVAILABLE',
+    });
+    return false;
+  }
 }
 
 function hasJsonContentType(req) {
@@ -768,7 +818,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/menu' && req.method === 'PUT') {
-    if (!requireAdmin(req, res)) return true;
+    if (!await requireMenuWriteAdmin(req, res)) return true;
 
     if (MENU_READ_SOURCE === 'json') {
       try {
