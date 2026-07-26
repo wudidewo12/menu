@@ -21,6 +21,7 @@
     "auth:check-permission": "tsx --conditions=react-server tools/check-admin-permission.mts",
     "auth:check-authorization-db": "pnpm db:generate && tsx --conditions=react-server tools/check-admin-authorization-rollback.mts",
     "auth:check-session-client": "tsx tools/check-admin-session-api-client.mts",
+    "auth:check-login-form": "tsx tools/check-admin-login-form.mts",
     "prebuild": "pnpm db:generate && node tools/sync-menu-seed.mjs",
     "dev": "node tools/dev-server.mjs",
     "build": "next build",
