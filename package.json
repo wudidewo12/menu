@@ -20,6 +20,7 @@
     "auth:check-login-api": "pnpm db:generate && tsx --conditions=react-server tools/check-admin-login-api.mts",
     "auth:check-permission": "tsx --conditions=react-server tools/check-admin-permission.mts",
     "auth:check-authorization-db": "pnpm db:generate && tsx --conditions=react-server tools/check-admin-authorization-rollback.mts",
+    "auth:check-session-client": "tsx tools/check-admin-session-api-client.mts",
     "prebuild": "pnpm db:generate && node tools/sync-menu-seed.mjs",
     "dev": "node tools/dev-server.mjs",
     "build": "next build",
