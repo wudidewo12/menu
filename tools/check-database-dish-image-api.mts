@@ -39,10 +39,80 @@ delete process.env.POSTGRES_OWNER;
 delete process.env.POSTGRES_OWNER_PASSWORD;
 delete process.env.POSTGRES_APP_PASSWORD;
 
-const [{ readMenuFromDatabase }, { prisma }] = await Promise.all([
+const [
+  { readMenuFromDatabase },
+  { prisma },
+  { createAdminSession },
+  { AdminRole, AdminStatus },
+] = await Promise.all([
   import("../src/server/db/menu-read.ts"),
   import("../src/server/db/prisma.ts"),
+  import("../src/server/auth/admin-session.ts"),
+  import("../src/generated/prisma/enums.ts"),
 ]);
+
+interface TestAdminCookies {
+  owner: string;
+  editor: string;
+  viewer: string;
+}
+
+const adminTestPrefix =
+  `image-write-${randomBytes(8).toString("hex")}-`;
+
+async function adminDatabaseCounts() {
+  const [adminUsers, adminSessions] = await Promise.all([
+    prisma.adminUser.count(),
+    prisma.adminSession.count(),
+  ]);
+
+  return {
+    adminUsers,
+    adminSessions,
+  };
+}
+
+async function createTestAdminCookies(): Promise<TestAdminCookies> {
+  const definitions = [
+    {
+      key: "owner",
+      role: AdminRole.OWNER,
+      displayName: "图片写入测试所有者",
+    },
+    {
+      key: "editor",
+      role: AdminRole.EDITOR,
+      displayName: "图片写入测试编辑者",
+    },
+    {
+      key: "viewer",
+      role: AdminRole.VIEWER,
+      displayName: "图片写入测试查看者",
+    },
+  ] as const;
+  const users = await Promise.all(
+    definitions.map((definition) =>
+      prisma.adminUser.create({
+        data: {
+          email: `${adminTestPrefix}${definition.key}@example.invalid`,
+          displayName: definition.displayName,
+          passwordHash: "TEST_HASH_NOT_FOR_LOGIN",
+          role: definition.role,
+          status: AdminStatus.ACTIVE,
+        },
+      }),
+    ),
+  );
+  const sessions = await Promise.all(
+    users.map((user) => createAdminSession(user.id)),
+  );
+
+  return {
+    owner: `menu_admin_session=${sessions[0].token}`,
+    editor: `menu_admin_session=${sessions[1].token}`,
+    viewer: `menu_admin_session=${sessions[2].token}`,
+  };
+}
 
 function imageUploadBody(
   dishId: number,
@@ -117,6 +187,7 @@ async function checkDatabaseImageApi(
   adminPassword: string,
   originalMenu: Menu,
   originalSnapshot: MenuDatabaseSnapshot,
+  adminCookies: TestAdminCookies,
 ) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "menu-database-image-api-"),
@@ -145,6 +216,59 @@ async function checkDatabaseImageApi(
     );
     assert.equal(unauthorized.status, 401);
     assert.equal(unauthorized.payload.error, "ADMIN_AUTH_REQUIRED");
+
+    const forbiddenOrigin = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: "https://evil.example",
+        cookie: adminCookies.owner,
+        rawBody: "{",
+      },
+    );
+    assert.equal(forbiddenOrigin.status, 403);
+    assert.equal(
+      forbiddenOrigin.payload.error,
+      "ADMIN_ORIGIN_FORBIDDEN",
+    );
+
+    const invalidSession = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: server.baseUrl,
+        cookie: "menu_admin_session=short",
+        rawBody: "{",
+      },
+    );
+    assert.equal(invalidSession.status, 401);
+    assert.equal(
+      invalidSession.payload.error,
+      "ADMIN_SESSION_REQUIRED",
+    );
+
+    const viewerDenied = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: server.baseUrl,
+        cookie: adminCookies.viewer,
+        rawBody: "{",
+      },
+    );
+    assert.equal(viewerDenied.status, 403);
+    assert.equal(
+      viewerDenied.payload.error,
+      "ADMIN_PERMISSION_DENIED",
+    );
+    assert.deepEqual(uploadedFiles(uploadsDirectory), []);
+    assert.deepEqual(
+      await takeMenuDatabaseSnapshot(prisma),
+      originalSnapshot,
+    );
 
     const invalidBody = await apiRequest(
       server.baseUrl,
@@ -198,13 +322,54 @@ async function checkDatabaseImageApi(
       originalSnapshot,
     );
 
+    const ownerUpload = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
+        body: imageUploadBody(testDish.id, originalMenu.version),
+      },
+    );
+    assert.equal(ownerUpload.status, 200);
+    assert.equal(ownerUpload.payload.linked, true);
+    const ownerSavedMenu = ownerUpload.payload.menu as unknown as Menu;
+    const ownerStorageKey = String(ownerUpload.payload.storageKey);
+    const ownerRelativeFile = ownerStorageKey.slice("uploads/".length);
+    assert.equal(ownerSavedMenu.version, originalMenu.version + 1);
+    assert.deepEqual(uploadedFiles(uploadsDirectory), [
+      ownerRelativeFile,
+    ]);
+
+    const editorUpload = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: server.baseUrl,
+        cookie: adminCookies.editor,
+        body: imageUploadBody(testDish.id, ownerSavedMenu.version),
+      },
+    );
+    assert.equal(editorUpload.status, 200);
+    assert.equal(editorUpload.payload.linked, true);
+    const editorSavedMenu = editorUpload.payload.menu as unknown as Menu;
+    const editorStorageKey = String(editorUpload.payload.storageKey);
+    const editorRelativeFile = editorStorageKey.slice("uploads/".length);
+    assert.equal(editorSavedMenu.version, originalMenu.version + 2);
+    assert.notEqual(editorStorageKey, ownerStorageKey);
+    assert.deepEqual(uploadedFiles(uploadsDirectory), [
+      editorRelativeFile,
+    ]);
+
     const successfulUpload = await apiRequest(
       server.baseUrl,
       "/api/upload",
       {
         method: "POST",
         password: adminPassword,
-        body: imageUploadBody(testDish.id, originalMenu.version),
+        body: imageUploadBody(testDish.id, editorSavedMenu.version),
       },
     );
     assert.equal(successfulUpload.status, 200);
@@ -219,7 +384,8 @@ async function checkDatabaseImageApi(
     const savedMenu = successfulUpload.payload.menu as unknown as Menu;
     const storageKey = String(successfulUpload.payload.storageKey);
     const expectedRelativeFile = storageKey.slice("uploads/".length);
-    assert.equal(savedMenu.version, originalMenu.version + 1);
+    assert.equal(savedMenu.version, originalMenu.version + 3);
+    assert.notEqual(storageKey, editorStorageKey);
     assert.match(
       storageKey,
       new RegExp(
@@ -246,7 +412,7 @@ async function checkDatabaseImageApi(
 
     const committedSnapshot = await takeMenuDatabaseSnapshot(prisma);
     assert.equal(committedSnapshot.totalBusinessRows, 237);
-    assert.equal(committedSnapshot.menuVersion, originalMenu.version + 1);
+    assert.equal(committedSnapshot.menuVersion, originalMenu.version + 3);
     assert.equal(committedSnapshot.dishSequenceValue, 55);
 
     const staleVersion = await apiRequest(
@@ -314,6 +480,7 @@ async function checkDatabaseImageApi(
 async function checkUnavailableDatabaseImageApi(
   adminPassword: string,
   originalMenu: Menu,
+  ownerCookie: string,
 ) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "menu-unavailable-image-api-"),
@@ -331,6 +498,38 @@ async function checkUnavailableDatabaseImageApi(
       dataDirectory,
       brokenDatabaseUrl.toString(),
     );
+    const forbiddenOrigin = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: "https://evil.example",
+        cookie: ownerCookie,
+        rawBody: "{",
+      },
+    );
+    assert.equal(forbiddenOrigin.status, 403);
+    assert.equal(
+      forbiddenOrigin.payload.error,
+      "ADMIN_ORIGIN_FORBIDDEN",
+    );
+
+    const unavailableSession = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        origin: server.baseUrl,
+        cookie: ownerCookie,
+        rawBody: "{",
+      },
+    );
+    assert.equal(unavailableSession.status, 503);
+    assert.equal(
+      unavailableSession.payload.error,
+      "ADMIN_SESSION_UNAVAILABLE",
+    );
+
     const response = await apiRequest(
       server.baseUrl,
       "/api/upload",
@@ -364,8 +563,15 @@ async function checkUnavailableDatabaseImageApi(
 
 const adminPassword = randomBytes(24).toString("hex");
 let topLevelError: unknown = null;
+const beforeAdminCounts = await adminDatabaseCounts();
+let afterAdminCounts = beforeAdminCounts;
 
 try {
+  assert.deepEqual(beforeAdminCounts, {
+    adminUsers: 0,
+    adminSessions: 0,
+  });
+  const adminCookies = await createTestAdminCookies();
   const originalMenu = await readMenuFromDatabase();
   if (!originalMenu) {
     throw new Error("The default database menu was not found");
@@ -386,6 +592,7 @@ try {
     adminPassword,
     originalMenu,
     originalSnapshot,
+    adminCookies,
   );
   assert.deepEqual(
     await takeMenuDatabaseSnapshot(prisma),
@@ -396,6 +603,7 @@ try {
   await checkUnavailableDatabaseImageApi(
     adminPassword,
     originalMenu,
+    adminCookies.owner,
   );
   assert.deepEqual(
     await takeMenuDatabaseSnapshot(prisma),
@@ -404,6 +612,14 @@ try {
 } catch (error) {
   topLevelError = error;
 } finally {
+  await prisma.adminUser.deleteMany({
+    where: {
+      email: {
+        startsWith: adminTestPrefix,
+      },
+    },
+  });
+  afterAdminCounts = await adminDatabaseCounts();
   await prisma.$disconnect();
 }
 
@@ -411,8 +627,15 @@ if (topLevelError) {
   throw topLevelError;
 }
 
+assert.deepEqual(afterAdminCounts, beforeAdminCounts);
+
 console.log("json image API behavior unchanged: passed");
 console.log("database image unauthenticated: 401");
+console.log("database image wrong-Origin session: 403 before database/body");
+console.log("database image invalid session: 401 before body");
+console.log("database image VIEWER session: 403 before body");
+console.log("database image OWNER/EDITOR sessions: 200/200");
+console.log("database image legacy password: 200");
 console.log("database image invalid body/base64/format: 400");
 console.log("database image successful upload/readback/serve: 200");
 console.log("database image stale version: 409");
@@ -423,3 +646,6 @@ console.log("database snapshot restored exactly: yes");
 console.log("final business rows: 237");
 console.log("final menu version: 1");
 console.log("final dish sequence: 55");
+console.log(
+  `final admin users/sessions: ${afterAdminCounts.adminUsers}/${afterAdminCounts.adminSessions}`,
+);

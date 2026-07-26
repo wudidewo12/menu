@@ -318,13 +318,7 @@ function adminToken(req) {
   return req.headers['x-admin-password'] || '';
 }
 
-function requireAdmin(req, res) {
-  if (adminToken(req) === ADMIN_PASSWORD) return true;
-  sendJson(res, 401, { error: 'ADMIN_AUTH_REQUIRED' });
-  return false;
-}
-
-async function requireMenuWriteAdmin(req, res) {
+async function requireAdminPermission(req, res, requiredPermission) {
   if (adminToken(req) === ADMIN_PASSWORD) return true;
 
   if (typeof req.headers.cookie !== 'string' || !req.headers.cookie) {
@@ -345,7 +339,7 @@ async function requireMenuWriteAdmin(req, res) {
       await loadAdminAuthorization();
     const authorization = await authorizeAdminRequest(
       req.headers.cookie,
-      'MENU_WRITE',
+      requiredPermission,
     );
 
     if (!authorization.authorized) {
@@ -357,7 +351,7 @@ async function requireMenuWriteAdmin(req, res) {
 
     return true;
   } catch {
-    console.error('Admin menu authorization failed.');
+    console.error('Admin request authorization failed.');
     sendJson(res, 503, {
       error: 'ADMIN_SESSION_UNAVAILABLE',
     });
@@ -818,7 +812,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/menu' && req.method === 'PUT') {
-    if (!await requireMenuWriteAdmin(req, res)) return true;
+    if (!await requireAdminPermission(req, res, 'MENU_WRITE')) return true;
 
     if (MENU_READ_SOURCE === 'json') {
       try {
@@ -847,7 +841,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/upload' && req.method === 'POST') {
-    if (!requireAdmin(req, res)) return true;
+    if (!await requireAdminPermission(req, res, 'DISH_IMAGE_WRITE')) return true;
 
     if (MENU_READ_SOURCE === 'json') {
       try {
