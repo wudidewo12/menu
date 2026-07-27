@@ -20,7 +20,7 @@ import {
   splitIngredients,
 } from './admin-utils';
 
-export default function AdminPage() {
+function AdminEditor() {
   const [password, setPassword] = useState('');
   const [savedPassword, setSavedPassword] = useState('');
   const [menu, setMenu] = useState(null);
@@ -676,4 +676,8 @@ export default function AdminPage() {
       </div>
     </main>
   );
+}
+
+export default function AdminPage() {
+  return <AdminEditor />;
 }
