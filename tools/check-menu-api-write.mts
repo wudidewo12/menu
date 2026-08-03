@@ -139,7 +139,7 @@ function addSkippedDishId(menu: Menu) {
   return desiredMenu;
 }
 
-async function checkJsonMode(adminPassword: string) {
+async function checkJsonMode(ownerCookie: string) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "menu-json-api-check-"),
   );
@@ -149,7 +149,6 @@ async function checkJsonMode(adminPassword: string) {
   try {
     server = await startServer(
       "json",
-      adminPassword,
       dataDirectory,
     );
     const originalResponse = await apiRequest(server.baseUrl, "/api/menu");
@@ -167,7 +166,8 @@ async function checkJsonMode(adminPassword: string) {
 
     const saved = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
-      password: adminPassword,
+      origin: server.baseUrl,
+      cookie: ownerCookie,
       body: desiredMenu,
     });
     assert.equal(saved.status, 200);
@@ -192,8 +192,6 @@ async function checkJsonMode(adminPassword: string) {
 }
 
 async function checkBrokenDatabaseMode(
-  adminPassword: string,
-  currentMenu: Menu,
   ownerCookie: string,
 ) {
   const temporaryRoot = fs.mkdtempSync(
@@ -207,7 +205,6 @@ async function checkBrokenDatabaseMode(
   try {
     server = await startServer(
       "database",
-      adminPassword,
       path.join(temporaryRoot, "data"),
       brokenDatabaseUrl.toString(),
     );
@@ -243,14 +240,6 @@ async function checkBrokenDatabaseMode(
       "ADMIN_SESSION_UNAVAILABLE",
     );
 
-    const response = await apiRequest(server.baseUrl, "/api/menu", {
-      method: "PUT",
-      password: adminPassword,
-      body: currentMenu,
-    });
-
-    assert.equal(response.status, 503);
-    assert.equal(response.payload.error, "DATABASE_MENU_UNAVAILABLE");
   } finally {
     await stopServer(server);
     fs.rmSync(temporaryRoot, {
@@ -261,7 +250,6 @@ async function checkBrokenDatabaseMode(
 }
 
 async function checkDatabaseMode(
-  adminPassword: string,
   originalMenu: Menu,
   originalSnapshot: MenuDatabaseSnapshot,
   adminCookies: TestAdminCookies,
@@ -276,7 +264,6 @@ async function checkDatabaseMode(
   try {
     server = await startServer(
       "database",
-      adminPassword,
       path.join(temporaryRoot, "data"),
     );
 
@@ -345,7 +332,8 @@ async function checkDatabaseMode(
 
     const invalidBody = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
-      password: adminPassword,
+      origin: server.baseUrl,
+      cookie: adminCookies.owner,
       rawBody: "{",
     });
     assert.equal(invalidBody.status, 400);
@@ -358,7 +346,8 @@ async function checkDatabaseMode(
       "/api/menu",
       {
         method: "PUT",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         body: invalidMenu,
       },
     );
@@ -403,32 +392,32 @@ async function checkDatabaseMode(
     const editorSavedMenu = editorWrite.payload as unknown as Menu;
     assert.ok(editorSavedMenu.settings.title.includes("编辑者会话"));
 
-    const legacyDesiredMenu = structuredClone(editorSavedMenu);
-    legacyDesiredMenu.settings.subtitle += "（旧密码兼容）";
     const legacyWrite = await apiRequest(
       server.baseUrl,
       "/api/menu",
       {
         method: "PUT",
-        password: adminPassword,
-        body: legacyDesiredMenu,
+        headers: {
+          "X-Admin-Password": "legacy-password-must-not-work",
+        },
+        body: editorSavedMenu,
       },
     );
-    assert.equal(legacyWrite.status, 200);
-    assert.equal(legacyWrite.payload.version, 4);
+    assert.equal(legacyWrite.status, 401);
+    assert.equal(legacyWrite.payload.error, "ADMIN_AUTH_REQUIRED");
 
-    const savedMenu = legacyWrite.payload as unknown as Menu;
-    assert.ok(savedMenu.settings.subtitle.includes("旧密码兼容"));
+    const savedMenu = editorSavedMenu;
 
     const reread = await apiRequest(server.baseUrl, "/api/menu");
     assert.equal(reread.status, 200);
-    assert.deepEqual(reread.payload, legacyWrite.payload);
+    assert.deepEqual(reread.payload, editorWrite.payload);
 
     const staleMenu = structuredClone(savedMenu);
     staleMenu.version = originalMenu.version;
     const staleWrite = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
-      password: adminPassword,
+      origin: server.baseUrl,
+      cookie: adminCookies.owner,
       body: staleMenu,
     });
     assert.equal(staleWrite.status, 409);
@@ -436,7 +425,8 @@ async function checkDatabaseMode(
 
     const skippedDishId = await apiRequest(server.baseUrl, "/api/menu", {
       method: "PUT",
-      password: adminPassword,
+      origin: server.baseUrl,
+      cookie: adminCookies.owner,
       body: addSkippedDishId(savedMenu),
     });
     assert.equal(skippedDishId.status, 409);
@@ -468,16 +458,11 @@ async function checkDatabaseMode(
   }
 }
 
-const adminPassword = randomBytes(24).toString("hex");
 let topLevelError: unknown = null;
 const beforeAdminCounts = await adminDatabaseCounts();
 let afterAdminCounts = beforeAdminCounts;
 
 try {
-  assert.deepEqual(beforeAdminCounts, {
-    adminUsers: 0,
-    adminSessions: 0,
-  });
   const adminCookies = await createTestAdminCookies();
   const originalMenu = await readMenuFromDatabase();
   if (!originalMenu) {
@@ -489,14 +474,13 @@ try {
   assert.equal(originalSnapshot.menuVersion, 1);
   assert.equal(originalSnapshot.dishSequenceValue, 55);
 
-  await checkJsonMode(adminPassword);
+  await checkJsonMode(adminCookies.owner);
   assert.deepEqual(
     await takeMenuDatabaseSnapshot(prisma),
     originalSnapshot,
   );
 
   await checkDatabaseMode(
-    adminPassword,
     originalMenu,
     originalSnapshot,
     adminCookies,
@@ -508,8 +492,6 @@ try {
   assert.deepEqual(await readMenuFromDatabase(), originalMenu);
 
   await checkBrokenDatabaseMode(
-    adminPassword,
-    originalMenu,
     adminCookies.owner,
   );
   assert.deepEqual(
@@ -542,11 +524,11 @@ console.log("database mode wrong-Origin session PUT: 403 before database/body");
 console.log("database mode invalid session PUT: 401 before body");
 console.log("database mode VIEWER PUT: 403 before body");
 console.log("database mode OWNER/EDITOR session PUT: 200/200");
-console.log("database mode legacy password PUT: 200");
+console.log("database mode legacy password header rejected: 401");
 console.log("database mode invalid body/validation: 400");
 console.log("database mode successful PUT/readback: 200");
 console.log("database mode stale version/dish id conflict: 409");
-console.log("database mode unavailable response: 503");
+console.log("database mode unavailable session response: 503");
 console.log("database snapshot restored exactly: yes");
 console.log("final business rows: 237");
 console.log("final menu version: 1");

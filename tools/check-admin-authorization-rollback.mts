@@ -104,11 +104,9 @@ const permissionDenied = {
 try {
   const before = await databaseCounts();
 
-  assert.deepEqual(before, {
-    adminUsers: 0,
-    adminSessions: 0,
-    businessRows: 237,
-  });
+  assert.equal(before.businessRows, 237);
+  assert.ok(before.adminUsers >= 1);
+  assert.ok(before.adminSessions >= 0);
 
   let invalidCookieDatabaseCalls = 0;
   const rejectUnexpectedDatabaseCall = async () => {

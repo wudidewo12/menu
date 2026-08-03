@@ -36,19 +36,23 @@ export async function fetchMenu(): Promise<Menu> {
   return response.json() as Promise<Menu>;
 }
 
-export async function saveMenuRequest(menu: Menu, adminPassword: string): Promise<Menu> {
+export async function saveMenuRequest(menu: Menu): Promise<Menu> {
   const response = await fetch('/api/menu', {
     method: 'PUT',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Password': adminPassword,
     },
     body: JSON.stringify(menu),
   });
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('管理密码不对');
+      throw new Error('登录会话已失效，请重新登录。');
+    }
+
+    if (response.status === 403) {
+      throw new Error('当前账号没有修改菜单的权限。');
     }
 
     throw new Error(`保存失败：${response.status}`);
@@ -61,14 +65,13 @@ export async function uploadDishImageRequest(
   file: File,
   dishId: number,
   menuVersion: number,
-  adminPassword: string,
 ): Promise<DishImageUploadResponse> {
   const data = await readFileAsDataUrl(file);
   const response = await fetch('/api/upload', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Password': adminPassword,
     },
     body: JSON.stringify({
       filename: file.name,
@@ -81,7 +84,11 @@ export async function uploadDishImageRequest(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('管理密码不对');
+      throw new Error('登录会话已失效，请重新登录。');
+    }
+
+    if (response.status === 403) {
+      throw new Error('当前账号没有上传图片的权限。');
     }
 
     const payload = await response.json().catch(() => ({})) as ApiErrorResponse;

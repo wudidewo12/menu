@@ -1,5 +1,4 @@
 import { execFile, spawn } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
@@ -14,8 +13,6 @@ try {
 const port = process.env.PORT || '3001';
 const appOrigin = process.env.APP_ORIGIN || `http://127.0.0.1:${port}`;
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
-const configuredAdminPassword = process.env.ADMIN_PASSWORD;
-const adminPassword = configuredAdminPassword || randomBytes(24).toString('base64url');
 const execFileAsync = promisify(execFile);
 
 function run(command, args, options = {}) {
@@ -108,10 +105,6 @@ async function releaseProjectPort() {
 
 await releaseProjectPort();
 
-if (!configuredAdminPassword) {
-  console.log(`=> 未设置 ADMIN_PASSWORD，本次本地临时密码：${adminPassword}`);
-}
-
 console.log('=> 构建前端静态产物...');
 const build = packageManagerCommand();
 await run(build.command, build.args);
@@ -128,7 +121,6 @@ const server = spawn(
       PORT: port,
       APP_ORIGIN: appOrigin,
       DATA_DIR: dataDir,
-      ADMIN_PASSWORD: adminPassword,
     },
   },
 );

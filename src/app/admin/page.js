@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import AdminSessionGate from './AdminSessionGate';
 import { fetchMenu, saveMenuRequest, uploadDishImageRequest } from './admin-api';
 import {
   allVisibleDishIds,
@@ -21,8 +22,6 @@ import {
 } from './admin-utils';
 
 function AdminEditor() {
-  const [password, setPassword] = useState('');
-  const [savedPassword, setSavedPassword] = useState('');
   const [menu, setMenu] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [message, setMessage] = useState('');
@@ -34,10 +33,6 @@ function AdminEditor() {
   const [sectionAddDishIds, setSectionAddDishIds] = useState({});
   const [draggedSectionDish, setDraggedSectionDish] = useState(null);
   const draggedSectionDishRef = useRef(null);
-
-  useEffect(() => {
-    setSavedPassword(window.sessionStorage.getItem('menu.adminPassword') || '');
-  }, []);
 
   useEffect(() => {
     fetchMenu()
@@ -72,7 +67,6 @@ function AdminEditor() {
     return [...values];
   }, [dishes, sections]);
 
-  const adminPassword = savedPassword || password;
   const selectedImage = selectedDish?.image || '/images/dishes/default-dish.png';
   const selectedImageSrc = selectedImage.startsWith('/uploads/')
     ? `${selectedImage}?v=${imageRevisions[selectedDish?.id] || 0}`
@@ -240,11 +234,6 @@ function AdminEditor() {
   }
 
   async function saveMenu() {
-    if (!adminPassword) {
-      setMessage('先输入管理密码。');
-      return;
-    }
-
     setSaving(true);
     setMessage('');
     const payload = {
@@ -253,10 +242,8 @@ function AdminEditor() {
     };
 
     try {
-      const savedMenu = await saveMenuRequest(payload, adminPassword);
+      const savedMenu = await saveMenuRequest(payload);
       setMenu(savedMenu);
-      setSavedPassword(adminPassword);
-      window.sessionStorage.setItem('menu.adminPassword', adminPassword);
       setMessage('已保存。普通菜单页会在几秒内刷新。');
     } catch (error) {
       setMessage(error.message);
@@ -267,10 +254,6 @@ function AdminEditor() {
 
   async function uploadDishImage(file) {
     if (!file || !selectedDish) return;
-    if (!adminPassword) {
-      setMessage('先输入管理密码再上传图片。');
-      return;
-    }
     if (!file.type.startsWith('image/')) {
       setMessage('只能上传图片文件。');
       return;
@@ -288,7 +271,6 @@ function AdminEditor() {
         file,
         selectedDish.id,
         menu.version,
-        adminPassword,
       );
 
       if (payload.menu) {
@@ -297,8 +279,6 @@ function AdminEditor() {
         updateDish(selectedDish.id, { image: payload.url, images: [payload.url] });
       }
       setImageRevisions((revisions) => ({ ...revisions, [selectedDish.id]: Date.now() }));
-      setSavedPassword(adminPassword);
-      window.sessionStorage.setItem('menu.adminPassword', adminPassword);
       setMessage('图片已更新。');
     } catch (error) {
       setMessage(error.message);
@@ -339,12 +319,6 @@ function AdminEditor() {
             <p>加菜、下架、改分类、调顺序。保存后朋友打开同一个链接会看到最新菜单。</p>
           </div>
           <div className="admin-auth">
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder={savedPassword ? '已记住本次密码' : '管理密码'}
-            />
             <button type="button" onClick={saveMenu} disabled={saving}>
               {saving ? '保存中' : '保存'}
             </button>
@@ -679,5 +653,9 @@ function AdminEditor() {
 }
 
 export default function AdminPage() {
-  return <AdminEditor />;
+  return (
+    <AdminSessionGate>
+      {() => <AdminEditor />}
+    </AdminSessionGate>
+  );
 }

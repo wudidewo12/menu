@@ -63,17 +63,13 @@ async function waitForHealth(baseUrl: string, process: ChildProcess) {
 
 export async function startServer(
   menuSource: "json" | "database",
-  adminPassword: string,
   dataDirectory: string,
   databaseConnection = process.env.DATABASE_URL,
 ): Promise<RunningServer> {
   const applicationRole = process.env.POSTGRES_APP_USER;
-  if (
-    menuSource === "database" &&
-    (!databaseConnection || !applicationRole)
-  ) {
+  if (!databaseConnection || !applicationRole) {
     throw new Error(
-      "Database test server requires DATABASE_URL and POSTGRES_APP_USER",
+      "Authenticated test server requires DATABASE_URL and POSTGRES_APP_USER",
     );
   }
 
@@ -81,20 +77,13 @@ export async function startServer(
   const baseUrl = `http://127.0.0.1:${port}`;
   const childEnvironment = {
     ...process.env,
-    ADMIN_PASSWORD: adminPassword,
     APP_ORIGIN: baseUrl,
     DATA_DIR: dataDirectory,
+    DATABASE_URL: databaseConnection,
     MENU_READ_SOURCE: menuSource,
     PORT: String(port),
+    POSTGRES_APP_USER: applicationRole,
   };
-
-  if (menuSource === "json") {
-    delete childEnvironment.DATABASE_URL;
-    delete childEnvironment.POSTGRES_APP_USER;
-  } else {
-    childEnvironment.DATABASE_URL = databaseConnection;
-    childEnvironment.POSTGRES_APP_USER = applicationRole;
-  }
 
   delete childEnvironment.DATABASE_ADMIN_URL;
   delete childEnvironment.POSTGRES_OWNER;
@@ -145,18 +134,15 @@ export async function apiRequest(
   pathname: string,
   options: {
     method?: string;
-    password?: string;
     origin?: string;
     cookie?: string;
+    headers?: Record<string, string>;
     contentType?: string | null;
     body?: unknown;
     rawBody?: string;
   } = {},
 ): Promise<ApiResponse> {
-  const headers: Record<string, string> = {};
-  if (options.password) {
-    headers["X-Admin-Password"] = options.password;
-  }
+  const headers: Record<string, string> = { ...options.headers };
   if (options.origin !== undefined) {
     headers.Origin = options.origin;
   }

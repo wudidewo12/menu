@@ -12,18 +12,12 @@ const MENU_SEED_FILE = path.join(__dirname, 'data', 'menu-seed.json');
 const ORDERS_DIR = path.join(DATA_DIR, 'orders');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const PORT = process.env.PORT || 8081;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const APP_ORIGIN = process.env.APP_ORIGIN;
 const MENU_READ_SOURCE = String(process.env.MENU_READ_SOURCE || 'json').trim().toLowerCase();
 const JSON_BODY_LIMIT = 2_000_000;
 const ADMIN_LOGIN_BODY_LIMIT = 16_384;
 const IMAGE_UPLOAD_LIMIT = 12_000_000;
 const MENU_READ_SOURCES = new Set(['json', 'database']);
-
-if (!ADMIN_PASSWORD) {
-  console.error('Missing ADMIN_PASSWORD. Set it before starting the menu server.');
-  process.exit(1);
-}
 
 if (!APP_ORIGIN) {
   console.error('Missing APP_ORIGIN. Set the single allowed site origin before starting the menu server.');
@@ -312,15 +306,7 @@ function deleteUploadVariantsForDish(dishId, keepFilename) {
   });
 }
 
-function adminToken(req) {
-  const bearer = req.headers.authorization || '';
-  if (bearer.startsWith('Bearer ')) return bearer.slice('Bearer '.length);
-  return req.headers['x-admin-password'] || '';
-}
-
 async function requireAdminPermission(req, res, requiredPermission) {
-  if (adminToken(req) === ADMIN_PASSWORD) return true;
-
   if (typeof req.headers.cookie !== 'string' || !req.headers.cookie) {
     sendJson(res, 401, { error: 'ADMIN_AUTH_REQUIRED' });
     return false;
@@ -621,7 +607,7 @@ async function handleApi(req, res, pathname) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Password',
+      'Access-Control-Allow-Headers': 'Content-Type',
     });
     res.end();
     return true;

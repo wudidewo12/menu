@@ -130,8 +130,8 @@ function imageUploadBody(
 }
 
 async function checkJsonImageApi(
-  adminPassword: string,
   originalMenu: Menu,
+  ownerCookie: string,
 ) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), "menu-json-image-api-"),
@@ -142,7 +142,6 @@ async function checkJsonImageApi(
   try {
     server = await startServer(
       "json",
-      adminPassword,
       dataDirectory,
     );
     const testDish = originalMenu.dishes[0];
@@ -153,7 +152,8 @@ async function checkJsonImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: ownerCookie,
         body: imageUploadBody(testDish.id, originalMenu.version),
       },
     );
@@ -184,7 +184,6 @@ async function checkJsonImageApi(
 }
 
 async function checkDatabaseImageApi(
-  adminPassword: string,
   originalMenu: Menu,
   originalSnapshot: MenuDatabaseSnapshot,
   adminCookies: TestAdminCookies,
@@ -200,7 +199,6 @@ async function checkDatabaseImageApi(
   try {
     server = await startServer(
       "database",
-      adminPassword,
       dataDirectory,
     );
     const testDish = originalMenu.dishes[0];
@@ -216,6 +214,23 @@ async function checkDatabaseImageApi(
     );
     assert.equal(unauthorized.status, 401);
     assert.equal(unauthorized.payload.error, "ADMIN_AUTH_REQUIRED");
+
+    const legacyPasswordDenied = await apiRequest(
+      server.baseUrl,
+      "/api/upload",
+      {
+        method: "POST",
+        headers: {
+          "X-Admin-Password": "legacy-password-must-not-work",
+        },
+        body: imageUploadBody(testDish.id, originalMenu.version),
+      },
+    );
+    assert.equal(legacyPasswordDenied.status, 401);
+    assert.equal(
+      legacyPasswordDenied.payload.error,
+      "ADMIN_AUTH_REQUIRED",
+    );
 
     const forbiddenOrigin = await apiRequest(
       server.baseUrl,
@@ -275,7 +290,8 @@ async function checkDatabaseImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         rawBody: "{",
       },
     );
@@ -287,7 +303,8 @@ async function checkDatabaseImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         body: imageUploadBody(testDish.id, originalMenu.version, {
           data: "not-base64!",
         }),
@@ -304,7 +321,8 @@ async function checkDatabaseImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         body: imageUploadBody(testDish.id, originalMenu.version, {
           filename: `${testDish.id}.png`,
           contentType: "image/png",
@@ -368,7 +386,8 @@ async function checkDatabaseImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         body: imageUploadBody(testDish.id, editorSavedMenu.version),
       },
     );
@@ -420,7 +439,8 @@ async function checkDatabaseImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         body: imageUploadBody(testDish.id, originalMenu.version),
       },
     );
@@ -439,7 +459,8 @@ async function checkDatabaseImageApi(
       "/api/upload",
       {
         method: "POST",
-        password: adminPassword,
+        origin: server.baseUrl,
+        cookie: adminCookies.owner,
         body: imageUploadBody(999_999, savedMenu.version),
       },
     );
@@ -478,8 +499,6 @@ async function checkDatabaseImageApi(
 }
 
 async function checkUnavailableDatabaseImageApi(
-  adminPassword: string,
-  originalMenu: Menu,
   ownerCookie: string,
 ) {
   const temporaryRoot = fs.mkdtempSync(
@@ -494,7 +513,6 @@ async function checkUnavailableDatabaseImageApi(
   try {
     server = await startServer(
       "database",
-      adminPassword,
       dataDirectory,
       brokenDatabaseUrl.toString(),
     );
@@ -530,24 +548,6 @@ async function checkUnavailableDatabaseImageApi(
       "ADMIN_SESSION_UNAVAILABLE",
     );
 
-    const response = await apiRequest(
-      server.baseUrl,
-      "/api/upload",
-      {
-        method: "POST",
-        password: adminPassword,
-        body: imageUploadBody(
-          originalMenu.dishes[0].id,
-          originalMenu.version,
-        ),
-      },
-    );
-
-    assert.equal(response.status, 503);
-    assert.equal(
-      response.payload.error,
-      "DATABASE_IMAGE_UPLOAD_UNAVAILABLE",
-    );
     assert.deepEqual(
       uploadedFiles(path.join(dataDirectory, "uploads")),
       [],
@@ -561,16 +561,11 @@ async function checkUnavailableDatabaseImageApi(
   }
 }
 
-const adminPassword = randomBytes(24).toString("hex");
 let topLevelError: unknown = null;
 const beforeAdminCounts = await adminDatabaseCounts();
 let afterAdminCounts = beforeAdminCounts;
 
 try {
-  assert.deepEqual(beforeAdminCounts, {
-    adminUsers: 0,
-    adminSessions: 0,
-  });
   const adminCookies = await createTestAdminCookies();
   const originalMenu = await readMenuFromDatabase();
   if (!originalMenu) {
@@ -582,14 +577,13 @@ try {
   assert.equal(originalSnapshot.menuVersion, 1);
   assert.equal(originalSnapshot.dishSequenceValue, 55);
 
-  await checkJsonImageApi(adminPassword, originalMenu);
+  await checkJsonImageApi(originalMenu, adminCookies.owner);
   assert.deepEqual(
     await takeMenuDatabaseSnapshot(prisma),
     originalSnapshot,
   );
 
   await checkDatabaseImageApi(
-    adminPassword,
     originalMenu,
     originalSnapshot,
     adminCookies,
@@ -601,8 +595,6 @@ try {
   assert.deepEqual(await readMenuFromDatabase(), originalMenu);
 
   await checkUnavailableDatabaseImageApi(
-    adminPassword,
-    originalMenu,
     adminCookies.owner,
   );
   assert.deepEqual(
@@ -631,16 +623,17 @@ assert.deepEqual(afterAdminCounts, beforeAdminCounts);
 
 console.log("json image API behavior unchanged: passed");
 console.log("database image unauthenticated: 401");
+console.log("database image legacy password header rejected: 401");
 console.log("database image wrong-Origin session: 403 before database/body");
 console.log("database image invalid session: 401 before body");
 console.log("database image VIEWER session: 403 before body");
 console.log("database image OWNER/EDITOR sessions: 200/200");
-console.log("database image legacy password: 200");
+console.log("database image writes use OWNER/EDITOR sessions only");
 console.log("database image invalid body/base64/format: 400");
 console.log("database image successful upload/readback/serve: 200");
 console.log("database image stale version: 409");
 console.log("database image non-menu dish: 404");
-console.log("database image unavailable: 503");
+console.log("database image unavailable session: 503");
 console.log("failed database image files compensated: yes");
 console.log("database snapshot restored exactly: yes");
 console.log("final business rows: 237");

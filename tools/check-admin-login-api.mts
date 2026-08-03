@@ -87,7 +87,6 @@ const testPassword =
   `Login API Test Only ${randomBytes(24).toString("base64url")}`;
 const wrongPassword =
   `Wrong Login API Test ${randomBytes(24).toString("base64url")}`;
-const adminPassword = randomBytes(24).toString("base64url");
 const temporaryRoot = fs.mkdtempSync(
   path.join(os.tmpdir(), "menu-admin-login-api-"),
 );
@@ -103,11 +102,9 @@ let after = before;
 
 try {
   before = await databaseCounts();
-  assert.deepEqual(before, {
-    adminUsers: 0,
-    adminSessions: 0,
-    businessRows: 237,
-  });
+  assert.equal(before.businessRows, 237);
+  assert.ok(before.adminUsers >= 1);
+  assert.ok(before.adminSessions >= 0);
 
   const passwordHash = await hashPassword(testPassword);
   const testUser = await prisma.adminUser.create({
@@ -126,7 +123,6 @@ try {
 
   server = await startServer(
     "database",
-    adminPassword,
     path.join(temporaryRoot, "data"),
     databaseUrl,
   );
@@ -310,7 +306,10 @@ try {
     wrongCredentials.payload,
     unknownAccount.payload,
   );
-  assert.equal(await prisma.adminSession.count(), 0);
+  assert.equal(
+    await prisma.adminSession.count(),
+    before.adminSessions,
+  );
 
   const successfulLogin = await apiRequest(
     server.baseUrl,
@@ -569,7 +568,6 @@ try {
   brokenDatabaseUrl.port = "1";
   server = await startServer(
     "database",
-    adminPassword,
     path.join(temporaryRoot, "broken-data"),
     brokenDatabaseUrl.toString(),
   );
